@@ -49,7 +49,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
         if self.split == "val" or self.split=="test":
             target['image'] = img_copy
-            target['file_name'] = self.coco.loadImgs(image_id)[0]['file_name']
+            target['filename'] = self.coco.loadImgs(image_id)[0]['file_name']
         
         return img, target
 
