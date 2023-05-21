@@ -3,15 +3,12 @@
 Train and eval functions used in main.py
 """
 import numpy as np
-import math
 import os
-import sys
 from typing import Iterable
 
 import torch
 import matplotlib.pyplot as plt
 import cv2
-import util.misc as utils
 from datasets.coco_eval import CocoEvaluator
 from tqdm import tqdm
 import itertools

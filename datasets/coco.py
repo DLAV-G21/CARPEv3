@@ -5,19 +5,18 @@ COCO dataset which returns image_id for evaluation.
 Mostly copy-paste from https://github.com/pytorch/vision/blob/13b35ff/references/detection/coco_utils.py
 """
 from pathlib import Path
-from PIL import Image
-from numpy.core.defchararray import array
-import torch
-from pycocotools.coco import COCO
-import numpy as np
-import torch.utils.data
+
+import albumentations as al
 import cv2
+import numpy as np
+import torch
+import torch.utils.data
 import torchvision
+from PIL import Image
 from pycocotools import mask as coco_mask
 
 import datasets.transforms as T
 
-import albumentations as al
 
 class CocoDetection(torchvision.datasets.CocoDetection):
     def __init__(self, img_folder, ann_file, transforms, al_transforms, apply_augm, apply_occlusion_augmentation, segmentation_folder, split):

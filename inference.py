@@ -1,24 +1,21 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 import argparse
-import datetime
 import json
-import random
-import time
-from pathlib import Path
+import logging
 import os
+import random
+from pathlib import Path
+
 import numpy as np
 import torch
-from torch.utils.data import DataLoader, DistributedSampler
-from datetime import datetime
-import datasets
-import util.misc as utils
-from datasets import build_dataset, get_coco_api_from_dataset
-from engine import evaluate, train_one_epoch
-from models import build_model
-from torch.utils.tensorboard import SummaryWriter
-from datasets.inference_dataset import build_inference
+from torch.utils.data import DataLoader
 
-import logging
+import util.misc as utils
+from datasets import get_coco_api_from_dataset
+from datasets.coco import CocoDataset, make_coco_transforms
+from datasets.inference_dataset import build_inference
+from engine import evaluate
+from models import build_model
 
 
 def get_args_parser():
@@ -119,8 +116,8 @@ def main(args):
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     log.info(f'Number of trainable parameters {n_parameters}' )
 
-    dataset_val = CocoDataset(args.image_folder, args.coco_file_path, make_coco_transforms("val",args.input_image_resize,False), None, None, None, None, "val")
-         if args.coco_file_path is not None else 
+    dataset_val = CocoDataset(args.image_folder, args.coco_file_path, make_coco_transforms("val",args.input_image_resize,False), None, None, None, None, "val")\
+         if args.coco_file_path is not None else \
          build_inference(args)
 
     sampler_val = torch.utils.data.SequentialSampler(dataset_val)

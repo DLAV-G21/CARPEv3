@@ -4,22 +4,14 @@ COCO dataset which returns image_id for evaluation.
 
 Mostly copy-paste from https://github.com/pytorch/vision/blob/13b35ff/references/detection/coco_utils.py
 """
-from pathlib import Path
 from PIL import Image
-from numpy.core.defchararray import array
 import torch
-from pycocotools.coco import COCO
 import numpy as np
 import torch.utils.data
-import cv2
-import torchvision
-from pycocotools import mask as coco_mask
 
 from os import listdir
 from os.path import isfile, isdir, join
 import datasets.transforms as T
-
-import albumentations as al
 
 class InferenceDataset(torch.utils.Dataset):
     def __init__(self, img, transforms):

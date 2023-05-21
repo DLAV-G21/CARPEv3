@@ -2,17 +2,15 @@
 """
 Backbone modules.
 """
-from collections import OrderedDict
+from typing import Dict, List
 
 import torch
 import torch.nn.functional as F
-import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
-from typing import Dict, List
-from models.resnet.resnet50 import ResNet
 
-from util.misc import NestedTensor, is_main_process
+from models.resnet.resnet50 import ResNet
+from util.misc import NestedTensor
 
 from .position_encoding import build_position_encoding
 
