@@ -19,9 +19,8 @@ from torch.utils.tensorboard import SummaryWriter
 import logging
 from datetime import datetime
 
-import warnings
-warnings.filterwarnings("ignore")
-
+import sys
+sys.out = None
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)

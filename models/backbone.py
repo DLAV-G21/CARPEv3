@@ -9,7 +9,9 @@ import torch.nn.functional as F
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
 
-from models.resnet.resnet50 import ResNet
+
+#from models.resnet.resnet50 import ResNet
+from mmcv.cnn import ResNet
 from util.misc import NestedTensor
 
 from .position_encoding import build_position_encoding
