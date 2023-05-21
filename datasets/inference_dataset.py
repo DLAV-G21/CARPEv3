@@ -36,7 +36,12 @@ class InferenceDataset(torch.utils.Dataset):
         img_name = self.imgs[idx]
         filename = join(self.img_folder,img_name)
         img = Image.open(filename)
-        target = {'image_id': idx, 'annotations': {}, "image": img, "filename":img_name}
+        target = {
+                    'image_id': idx, 'annotations': {},
+                    'image': np.array(img), 'filename':img_name,
+                    'orig_size': torch.as_tensor([img.height, img.width]),
+                    'size': torch.as_tensor([img.height, img.width]),
+                 }
 
         if self._transforms is not None:
             img, target = self._transforms(img, target)

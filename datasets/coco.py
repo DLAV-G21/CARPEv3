@@ -32,6 +32,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
     def __getitem__(self, idx):
         img, target = super(CocoDetection, self).__getitem__(idx)
+        img_copy = np.array(img.copy())
         image_id = self.ids[idx]
         target = {'image_id': image_id, 'annotations': target}
         img, target = self.prepare(img, target)
@@ -47,7 +48,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         target["labels"] = target["labels"] - 1
 
         if self.split == "val" or self.split=="test":
-            target['image'] = np.array(img.copy())
+            target['image'] = img_copy
             target['file_name'] = self.coco.loadImgs(image_id)[0]['file_name']
         
         return img, target
