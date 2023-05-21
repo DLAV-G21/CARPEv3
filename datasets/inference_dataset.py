@@ -22,7 +22,7 @@ import datasets.transforms as T
 import albumentations as al
 
 class InferenceDataset(torch.utils.Dataset):
-    def __init__(self, img_folder, transform):
+    def __init__(self, img_folder, transforms):
         super().__init__()
         self._transforms = transforms
         if not isdir(img_folder):
@@ -34,9 +34,9 @@ class InferenceDataset(torch.utils.Dataset):
 
     def __getitem__(self, idx):
         img_name = self.imgs[idx]
-        filename = os.path.join(self.img_folder,img_name)
+        filename = join(self.img_folder,img_name)
         img = Image.open(filename)
-        target = {'image_id': idx, 'annotations': {}, "image":{"image": img, "filename":img_name}}
+        target = {'image_id': idx, 'annotations': {}, "image": img, "filename":img_name}
 
         if self._transforms is not None:
             img, target = self._transforms(img, target)

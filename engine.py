@@ -65,8 +65,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
     for i, (samples, targets) in enumerate(pbar):
         samples = samples.to(device)
 
-        eval_images =[t["image"] for t in targets]
-        targets = [{k: v.to(device) for k, v in t.items() if k != "image"} for t in targets ]
+        targets = [{k: v.to(device) if k != "image" and k != "filename" else v for k, v in t.items()} for t in targets ]
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
@@ -83,9 +82,9 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
             coco_evaluator.update_keypoints(results)
 
         if visualize_keypoints:
-            for target,image in zip(targets,eval_images):
+            for target in targets:
                 filt =[out for out in results if out["image_id"] == target["image_id"]]
-                plot_and_save_keypoints_inference(image["image"], image["filename"], filt, out_folder,num_keypoints)
+                plot_and_save_keypoints_inference(targets["image"], targets["filename"], filt, out_folder,num_keypoints)
 
 
     if (coco_evaluator is not None) and (len(coco_evaluator.keypoint_predictions) > 0):
