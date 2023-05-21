@@ -15,6 +15,7 @@ import util.misc as utils
 from datasets.coco_eval import CocoEvaluator
 from tqdm import tqdm
 import itertools
+from util.openpifpaf_helper import *
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
@@ -50,7 +51,10 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
     model.eval()
     criterion.eval()
     iou_types = ["keypoints"]
-    coco_evaluator = CocoEvaluator(base_ds, iou_types)
+    coco_evaluator = None
+    if base_ds is not None:
+        coco_evaluator = CocoEvaluator(base_ds, iou_types)
+
     # From openpifpaf
     CAR_SIGMAS = [0.05] * num_keypoints
     coco_evaluator.set_scale(np.array(CAR_SIGMAS))
@@ -62,7 +66,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
         samples = samples.to(device)
 
         eval_images =[t["image"] for t in targets]
-        targets = [{k: v.to(device) for k, v in t.items() if k != "image" } for t in targets ]
+        targets = [{k: v.to(device) for k, v in t.items() if k != "image"} for t in targets ]
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
@@ -81,7 +85,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
         if visualize_keypoints:
             for target,image in zip(targets,eval_images):
                 filt =[out for out in results if out["image_id"] == target["image_id"]]
-                plot_and_save_keypoints_inference(image,target["image_id"].item(), filt, out_folder)
+                plot_and_save_keypoints_inference(image["image"], image["filename"], filt, out_folder,num_keypoints)
 
 
     if (coco_evaluator is not None) and (len(coco_evaluator.keypoint_predictions) > 0):
@@ -105,9 +109,8 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
     else:
        return None
 
-def plot_and_save_keypoints_inference(img, img_id,data, output_folder):
-    skeleton = []#CAR_SKELETON_24 if True else CAR_SKELETON_66
-    nb_kps = 24 if True else nb_kps
+def plot_and_save_keypoints_inference(img, image_name,data, output_folder,num_keypoints):
+    skeleton = CAR_SKELETON_24 if num_keypoints ==24 else CAR_SKELETON_66
     colors =  plt.cm.tab20( (10./9*np.arange(20*9/10)).astype(int) )
 
     for lst in data: 
@@ -132,5 +135,6 @@ def plot_and_save_keypoints_inference(img, img_id,data, output_folder):
           cv2.line(img,all_kps_coordinate[a-1], all_kps_coordinate[b-1],color=[int(bc*255),int(g*255),int(r*255)],thickness=18)
 
       for a in all_found_kps:
-        cv2.circle(img, all_kps_coordinate[a-1],20, color=[0,0,255],thickness=-1)
-    cv2.imwrite(os.path.join(output_folder, f"{img_id}.jpg"),img)
+        r,g,bc,ac = colors[a%len(colors)]
+        cv2.circle(img, all_kps_coordinate[a-1],10, color=[int(bc*255),int(g*255),int(r*255)],thickness=-1)
+    cv2.imwrite(os.path.join(output_folder, f"{image_name}"),img)

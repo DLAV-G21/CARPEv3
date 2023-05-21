@@ -16,6 +16,7 @@ from datasets import build_dataset, get_coco_api_from_dataset
 from engine import evaluate, train_one_epoch
 from models import build_model
 from torch.utils.tensorboard import SummaryWriter
+from datasets.inference_dataset import build_inference
 
 import logging
 
@@ -23,6 +24,8 @@ import logging
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
     parser.add_argument("pretrained_weight_path")
+    parser.add_argument("image_folder",type=str)
+    parser.add_argument('--coco_file_path', type=str)
     parser.add_argument("-j",help="If we should write json output to disk",action="store_true")
     parser.add_argument("--viz", help="If we should display keypoints on images",action="store_true")
     parser.add_argument("--inference_out_folder",type=str, help="The folder in which we should store the output")
@@ -79,7 +82,6 @@ def get_args_parser():
 
     # dataset parameters
     parser.add_argument('--dataset_file', default='coco')
-    parser.add_argument('--coco_path', type=str)
     parser.add_argument('--remove_difficult', action='store_true')
 
     parser.add_argument('--output_dir', default=os.path.join("models","model_saves"),
@@ -98,9 +100,6 @@ def get_args_parser():
     parser.add_argument("--apply_occlusion_augmentation", action="store_true", help="If we should apply the occlusion augmentation")
     parser.add_argument("--input_image_resize",default=(480,640),type=tuple)
 
-
-
-
     return parser
 
 
@@ -115,14 +114,14 @@ def main(args):
     torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
-    writer = SummaryWriter()
     model, criterion, postprocessors = build_model(args)
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     log.info(f'Number of trainable parameters {n_parameters}' )
 
-    dataset_val = build_dataset(image_set='val', args=args)
-    dataset_test = build_dataset(image_set="test", args=args)
+    dataset_val = CocoDataset(args.image_folder, args.coco_file_path, make_coco_transforms("val",args.input_image_resize,False), None, None, None, None, "val")
+         if args.coco_file_path is not None else 
+         build_inference(args)
 
     sampler_val = torch.utils.data.SequentialSampler(dataset_val)
 
@@ -147,15 +146,18 @@ def main(args):
         raise ValueError("The given weight path doesn't exist")
 
     model.to(device)
+    base_ds = None
+    if args.coco_file_path is not None:
+        base_ds = get_coco_api_from_dataset(dataset_val)
 
     coco_evaluator = evaluate(model, 
                             criterion, 
                             postprocessors,
                             data_loader_val,
-                            get_coco_api_from_dataset(dataset_val),
+                            base_ds,
                             device,
                             args.output_dir,
-                            nb_keypoints=args.nb_keypoints,
+                            num_keypoints=args.num_keypoints,
                             visualize_keypoints=args.viz,
                             out_folder=args.inference_out_folder)
 
