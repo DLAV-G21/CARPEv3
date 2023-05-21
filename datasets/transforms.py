@@ -211,7 +211,14 @@ class RandomSizeCrop(object):
         region = T.RandomCrop.get_params(img, [h, w])
         return crop(img, target, region)
 
+class Resize(object):
+    def __init__(self, size ):
+        assert isinstance(size, (list, tuple))
+        self.size = size
 
+    def __call__(self, img, target=None):
+        return resize(img, target, self.size)
+    
 class CenterCrop(object):
     def __init__(self, size):
         self.size = size

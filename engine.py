@@ -2,150 +2,135 @@
 """
 Train and eval functions used in main.py
 """
+import numpy as np
 import math
 import os
 import sys
 from typing import Iterable
 
 import torch
-
+import matplotlib.pyplot as plt
+import cv2
 import util.misc as utils
 from datasets.coco_eval import CocoEvaluator
-from datasets.panoptic_eval import PanopticEvaluator
-
+from tqdm import tqdm
+import itertools
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
-                    device: torch.device, epoch: int, max_norm: float = 0):
+                    device: torch.device, epoch: int, max_norm: float = 0, logger = None):
     model.train()
     criterion.train()
-    metric_logger = utils.MetricLogger(delimiter="  ")
-    metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
-    metric_logger.add_meter('class_error', utils.SmoothedValue(window_size=1, fmt='{value:.2f}'))
-    header = 'Epoch: [{}]'.format(epoch)
-    print_freq = 10
-
-    for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
+    len_dl = len(data_loader)
+    pbar = tqdm(data_loader)
+    pbar.set_description(f"Epoch {epoch}, loss = init")
+    for i, (samples, targets) in enumerate(pbar):
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
         weight_dict = criterion.weight_dict
+
         losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
 
-        # reduce losses over all GPUs for logging purposes
-        loss_dict_reduced = utils.reduce_dict(loss_dict)
-        loss_dict_reduced_unscaled = {f'{k}_unscaled': v
-                                      for k, v in loss_dict_reduced.items()}
-        loss_dict_reduced_scaled = {k: v * weight_dict[k]
-                                    for k, v in loss_dict_reduced.items() if k in weight_dict}
-        losses_reduced_scaled = sum(loss_dict_reduced_scaled.values())
-
-        loss_value = losses_reduced_scaled.item()
-
-        if not math.isfinite(loss_value):
-            print("Loss is {}, stopping training".format(loss_value))
-            print(loss_dict_reduced)
-            sys.exit(1)
+        if logger is not None: 
+            logger.add_scalar("Loss/train",losses.item(),len_dl*epoch + i)
 
         optimizer.zero_grad()
         losses.backward()
+        pbar.set_description(f"Epoch {epoch}, loss = {losses.item():.4f}")
         if max_norm > 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
         optimizer.step()
 
-        metric_logger.update(loss=loss_value, **loss_dict_reduced_scaled, **loss_dict_reduced_unscaled)
-        metric_logger.update(class_error=loss_dict_reduced['class_error'])
-        metric_logger.update(lr=optimizer.param_groups[0]["lr"])
-    # gather the stats from all processes
-    metric_logger.synchronize_between_processes()
-    print("Averaged stats:", metric_logger)
-    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
-
 
 @torch.no_grad()
-def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, output_dir):
+def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, output_dir, epoch=0, logger=None,num_keypoints=24,visualize_keypoints=False,out_folder=""):
     model.eval()
     criterion.eval()
-
-    metric_logger = utils.MetricLogger(delimiter="  ")
-    metric_logger.add_meter('class_error', utils.SmoothedValue(window_size=1, fmt='{value:.2f}'))
-    header = 'Test:'
-
-    iou_types = tuple(k for k in ('segm', 'bbox') if k in postprocessors.keys())
+    iou_types = ["keypoints"]
     coco_evaluator = CocoEvaluator(base_ds, iou_types)
-    # coco_evaluator.coco_eval[iou_types[0]].params.iouThrs = [0, 0.1, 0.5, 0.75]
+    # From openpifpaf
+    CAR_SIGMAS = [0.05] * num_keypoints
+    coco_evaluator.set_scale(np.array(CAR_SIGMAS))
 
-    panoptic_evaluator = None
-    if 'panoptic' in postprocessors.keys():
-        panoptic_evaluator = PanopticEvaluator(
-            data_loader.dataset.ann_file,
-            data_loader.dataset.ann_folder,
-            output_dir=os.path.join(output_dir, "panoptic_eval"),
-        )
-
-    for samples, targets in metric_logger.log_every(data_loader, 10, header):
+    len_dl = len(data_loader)
+    pbar = tqdm(data_loader)
+    pbar.set_description(f"Epoch {epoch}, loss = init")
+    for i, (samples, targets) in enumerate(pbar):
         samples = samples.to(device)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+        eval_images =[t["image"] for t in targets]
+        targets = [{k: v.to(device) for k, v in t.items() if k != "image" } for t in targets ]
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
         weight_dict = criterion.weight_dict
 
-        # reduce losses over all GPUs for logging purposes
-        loss_dict_reduced = utils.reduce_dict(loss_dict)
-        loss_dict_reduced_scaled = {k: v * weight_dict[k]
-                                    for k, v in loss_dict_reduced.items() if k in weight_dict}
-        loss_dict_reduced_unscaled = {f'{k}_unscaled': v
-                                      for k, v in loss_dict_reduced.items()}
-        metric_logger.update(loss=sum(loss_dict_reduced_scaled.values()),
-                             **loss_dict_reduced_scaled,
-                             **loss_dict_reduced_unscaled)
-        metric_logger.update(class_error=loss_dict_reduced['class_error'])
+        losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
 
-        orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)
-        results = postprocessors['bbox'](outputs, orig_target_sizes)
-        if 'segm' in postprocessors.keys():
-            target_sizes = torch.stack([t["size"] for t in targets], dim=0)
-            results = postprocessors['segm'](results, outputs, orig_target_sizes, target_sizes)
-        res = {target['image_id'].item(): output for target, output in zip(targets, results)}
+        if logger is not None: 
+            logger.add_scalar("Loss/train",losses.item(),len_dl*epoch + i)
+        results = postprocessors['keypoints'](outputs, targets)
+        pbar.set_description(f"Epoch {epoch}, loss = {losses.item():.4f}")
+
         if coco_evaluator is not None:
-            coco_evaluator.update(res)
+            coco_evaluator.update_keypoints(results)
 
-        if panoptic_evaluator is not None:
-            res_pano = postprocessors["panoptic"](outputs, target_sizes, orig_target_sizes)
-            for i, target in enumerate(targets):
-                image_id = target["image_id"].item()
-                file_name = f"{image_id:012d}.png"
-                res_pano[i]["image_id"] = image_id
-                res_pano[i]["file_name"] = file_name
+        if visualize_keypoints:
+            for target,image in zip(targets,eval_images):
+                filt =[out for out in results if out["image_id"] == target["image_id"]]
+                plot_and_save_keypoints_inference(image,target["image_id"].item(), filt, out_folder)
 
-            panoptic_evaluator.update(res_pano)
 
-    # gather the stats from all processes
-    metric_logger.synchronize_between_processes()
-    print("Averaged stats:", metric_logger)
-    if coco_evaluator is not None:
+    if (coco_evaluator is not None) and (len(coco_evaluator.keypoint_predictions) > 0):
         coco_evaluator.synchronize_between_processes()
-    if panoptic_evaluator is not None:
-        panoptic_evaluator.synchronize_between_processes()
-
-    # accumulate predictions from all images
-    if coco_evaluator is not None:
         coco_evaluator.accumulate()
         coco_evaluator.summarize()
-    panoptic_res = None
-    if panoptic_evaluator is not None:
-        panoptic_res = panoptic_evaluator.summarize()
-    stats = {k: meter.global_avg for k, meter in metric_logger.meters.items()}
-    if coco_evaluator is not None:
-        if 'bbox' in postprocessors.keys():
-            stats['coco_eval_bbox'] = coco_evaluator.coco_eval['bbox'].stats.tolist()
-        if 'segm' in postprocessors.keys():
-            stats['coco_eval_masks'] = coco_evaluator.coco_eval['segm'].stats.tolist()
-    if panoptic_res is not None:
-        stats['PQ_all'] = panoptic_res["All"]
-        stats['PQ_th'] = panoptic_res["Things"]
-        stats['PQ_st'] = panoptic_res["Stuff"]
-    return stats, coco_evaluator
+        if logger is not None:
+            stats = coco_evaluator.coco_eval['keypoints'].stats.tolist()
+            logger.add_scalar("AP", stats[0], epoch)  # for the checkpoint callback monitor.
+            logger.add_scalar("val/AP", stats[0],epoch)
+            logger.add_scalar("val/AP.5", stats[1],epoch)
+            logger.add_scalar("val/AP.75", stats[2],epoch)
+            logger.add_scalar("val/AP.med", stats[3],epoch)
+            logger.add_scalar("val/AP.lar", stats[4],epoch)
+            logger.add_scalar("val/AR", stats[5],epoch)
+            logger.add_scalar("val/AR.5", stats[6],epoch)
+            logger.add_scalar("val/AR.75", stats[7],epoch)
+            logger.add_scalar("val/AR.med", stats[8],epoch)
+            logger.add_scalar("val/AR.lar", stats[9],epoch)
+        return coco_evaluator
+    else:
+       return None
+
+def plot_and_save_keypoints_inference(img, img_id,data, output_folder):
+    skeleton = []#CAR_SKELETON_24 if True else CAR_SKELETON_66
+    nb_kps = 24 if True else nb_kps
+    colors =  plt.cm.tab20( (10./9*np.arange(20*9/10)).astype(int) )
+
+    for lst in data: 
+      kps = lst["keypoints"]
+      all_found_kps = [ ]
+      all_kps_coordinate=[]
+      for i in range(nb_kps):
+        x,y,z = tuple(kps[i*3:(i+1)*3])
+        if z > 0:
+          x= int(x)
+          y = int(y)
+          all_found_kps.append(int(i+1))
+          all_kps_coordinate.append((x,y))
+        else:
+          all_kps_coordinate.append((-1,-1))
+        
+      set_of_pairs = set(itertools.permutations(all_found_kps,2))
+
+      for idx, (a,b) in enumerate(skeleton):
+        if (a,b) in set_of_pairs:
+          r,g,bc,ac = colors[idx%len(colors)]                  
+          cv2.line(img,all_kps_coordinate[a-1], all_kps_coordinate[b-1],color=[int(bc*255),int(g*255),int(r*255)],thickness=18)
+
+      for a in all_found_kps:
+        cv2.circle(img, all_kps_coordinate[a-1],20, color=[0,0,255],thickness=-1)
+    cv2.imwrite(os.path.join(output_folder, f"{img_id}.jpg"),img)

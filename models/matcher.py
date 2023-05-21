@@ -18,26 +18,40 @@ class HungarianMatcher(nn.Module):
     while the others are un-matched (and thus treated as non-objects).
     """
 
-    def __init__(self, cost_class: float = 1, cost_bbox: float = 1, cost_giou: float = 1):
+    def __init__(self, cost_class: float = 1, cost_bbox: float = 1, num_keypoints: int = 17, splited = True):
         """Creates the matcher
 
         Params:
             cost_class: This is the relative weight of the classification error in the matching cost
             cost_bbox: This is the relative weight of the L1 error of the bounding box coordinates in the matching cost
-            cost_giou: This is the relative weight of the giou loss of the bounding box in the matching cost
         """
         super().__init__()
+        self.splited = splited
+        self.num_keypoints = num_keypoints
         self.cost_class = cost_class
         self.cost_bbox = cost_bbox
-        self.cost_giou = cost_giou
         self.l_deltas = 0.5
         self.l_vis = 0.2
         self.l_ctr = 0.5
         self.l_abs = 4
-        assert cost_class != 0 or cost_bbox != 0 or cost_giou != 0, "all costs cant be 0"
+        assert cost_class != 0 or cost_bbox != 0, "all costs cant be 0"
 
     @torch.no_grad()
-    def forward(self, outputs, targets, num_boxes):
+    def forward(self, outputs, targets):
+        if not self.splited:
+            return self.forward_(outputs, targets)
+        all_indices = []
+        for b in range(outputs['pred_logits'].shape[0]):
+            all_indices.append(self.forward_({
+                'pred_logits':outputs['pred_logits'][b].unsqueeze(0),
+                'pred_keypoints' : outputs['pred_keypoints'][b].unsqueeze(0)
+                },
+                [targets[b]]
+            )[0])
+        return all_indices
+
+    @torch.no_grad()
+    def forward_(self, outputs, targets):
         """ Performs the matching
 
         Params:
@@ -62,10 +76,10 @@ class HungarianMatcher(nn.Module):
         # We flatten to compute the cost matrices in a batch
         out_prob = outputs["pred_logits"].flatten(0, 1).softmax(-1)  # [batch_size * num_queries, num_classes]
         out_keypoints = outputs["pred_keypoints"].flatten(0, 1)  # [batch_size * num_queries, (3 * 17) + 1]
-        nb_keypoints = 24
+
         C_pred = out_keypoints[:, :2]
-        Z_pred = out_keypoints[:, 2:2+nb_keypoints*2]
-        V_pred = out_keypoints[:, 2+nb_keypoints*2:]
+        Z_pred = out_keypoints[:, 2:2+self.num_keypoints*2]
+        V_pred = out_keypoints[:, 2+self.num_keypoints*2:]
         
         # Also concat the target labels and boxes
         tgt_ids = torch.cat([v["labels"] for v in targets])
@@ -73,13 +87,13 @@ class HungarianMatcher(nn.Module):
         tgt_keypoints = torch.cat([v["keypoints"] for v in targets])
         
         C_gt = tgt_keypoints[:, :2]
-        Z_gt = tgt_keypoints[:, 2:2+nb_keypoints*2]
-        V_gt = tgt_keypoints[:, 2+nb_keypoints*2:]
+        Z_gt = tgt_keypoints[:, 2:2+self.num_keypoints*2]
+        V_gt = tgt_keypoints[:, 2+self.num_keypoints*2:]
 
-        C_gt_expand = torch.repeat_interleave(C_gt.unsqueeze(1), nb_keypoints, dim=1).view(-1,nb_keypoints*2)
+        C_gt_expand = torch.repeat_interleave(C_gt.unsqueeze(1), self.num_keypoints, dim=1).view(-1,self.num_keypoints*2)
         A_gt = C_gt_expand + Z_gt
 
-        C_pred_expand = torch.repeat_interleave(C_pred.unsqueeze(1), nb_keypoints, dim=1).view(-1,nb_keypoints*2)
+        C_pred_expand = torch.repeat_interleave(C_pred.unsqueeze(1), self.num_keypoints, dim=1).view(-1,self.num_keypoints*2)
         A_pred = C_pred_expand + Z_pred
 
         # Compute the classification cost. Contrary to the loss, we don't use the NLL,
@@ -105,4 +119,4 @@ class HungarianMatcher(nn.Module):
 
 
 def build_matcher(args):
-    return HungarianMatcher(cost_class=args.set_cost_class, cost_bbox=args.set_cost_bbox, cost_giou=args.set_cost_giou)
+    return HungarianMatcher(cost_class=args.set_cost_class, cost_bbox=args.set_cost_bbox, num_keypoints=args.num_keypoints)

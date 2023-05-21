@@ -8,7 +8,8 @@ val2017/*
 carpe_data/*
 runs/*
 out_images/*
-models/model_saves/*
+snapshots/*
+
 # C extensions
 *.so
 
