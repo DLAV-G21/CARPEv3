@@ -58,7 +58,7 @@ def get_args_parser():
                         help="Dropout applied in the transformer")
     parser.add_argument('--nheads', default=8, type=int,
                         help="Number of attention heads inside the transformer's attentions")
-    parser.add_argument('--num_queries', default=100, type=int,
+    parser.add_argument('--num_queries', default=25, type=int,
                         help="Number of query slots")
     parser.add_argument('--pre_norm', action='store_true')
 
@@ -96,11 +96,6 @@ def get_args_parser():
     parser.add_argument("--calibration_epochs", default=1,type=int)
     parser.add_argument("--apply_augmentation", action="store_true", help="If we apply the data augmentation")
     parser.add_argument("--apply_occlusion_augmentation", action="store_true", help="If we should apply the occlusion augmentation")
-    parser.add_argument("--nb_keypoints", default=24, type=int, help="The number of keypoints maximum to find in one car")
-    parser.add_argument("--nb_keypoints_queries", default=100, type=int, help="The number queries for keypoints maximum to find in one car")
-    parser.add_argument("--nb_links_queries", default=300, type=int, help="The number of queries links maximum to find in one car")
-    parser.add_argument("--nb_links", default=49, type=int,help="The number of links in one skeleton")
-    parser.add_argument("--keypoints_loss_coef", default=5,type=float)
     parser.add_argument("--input_image_resize",default=(480,640),type=tuple)
 
 
