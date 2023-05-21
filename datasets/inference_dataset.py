@@ -22,12 +22,15 @@ import datasets.transforms as T
 import albumentations as al
 
 class InferenceDataset(torch.utils.Dataset):
-    def __init__(self, img_folder, transforms):
+    def __init__(self, img, transforms):
         super().__init__()
         self._transforms = transforms
-        if not isdir(img_folder):
+        if isdir(img):
+            self.imgs = [f for f in listdir(img) if isfile(join(img,f)) and (f.endsWith(".png") or f.endsWith(".jpg"))]
+        elif isfile(img) and (img.endsWith(".png") or img.endsWith(".jpg")):
+            self.imgs = [img]
+        else:
             raise ValueError("The given path should be a folder containing all the images for which the model should make predictions.")
-        self.imgs = [f for f in listdir(img_folder) if isfile(join(img_folder,f)) and (f.endsWith(".png") or f.endsWith(".jpg"))]
 
     def __len__(self):
         return len(self.imgs)
