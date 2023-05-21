@@ -28,9 +28,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         self.apply_augm = apply_augm
         self.apply_occlusion_augmentation = apply_occlusion_augmentation
         self.segmentation_folder = segmentation_folder
-
-    #def __len__(self):
-    #    return 3#len(self.all_imgIds)
+        self.split = split
 
     def __getitem__(self, idx):
         img, target = super(CocoDetection, self).__getitem__(idx)
@@ -47,6 +45,12 @@ class CocoDetection(torchvision.datasets.CocoDetection):
             img, target = self._transforms(img, target)
 
         target["labels"] = target["labels"] - 1
+
+        if self.split == "val" or self.split=="test":
+            target["image"] = {
+            "image":np.array(image.copy()),
+            "filename":self.coco.loadImgs(image_id)[0]['file_name']
+            }
         
         return img, target
 
@@ -128,8 +132,7 @@ class ConvertCocoPolysToMask(object):
 
         del target['boxes']
         
-        if self.split == "val" or self.split=="test":
-            target["image"] = np.array(image.copy())
+        
         return image, target
 
 

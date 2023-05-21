@@ -117,7 +117,7 @@ def plot_and_save_keypoints_inference(img, image_name,data, output_folder,num_ke
       kps = lst["keypoints"]
       all_found_kps = [ ]
       all_kps_coordinate=[]
-      for i in range(nb_kps):
+      for i in range(num_keypoints):
         x,y,z = tuple(kps[i*3:(i+1)*3])
         if z > 0:
           x= int(x)
