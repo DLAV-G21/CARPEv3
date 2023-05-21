@@ -7,7 +7,6 @@ import os
 from typing import Iterable
 
 import torch
-import matplotlib.pyplot as plt
 import cv2
 from datasets.coco_eval import CocoEvaluator
 from tqdm import tqdm
@@ -107,7 +106,26 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
 
 def plot_and_save_keypoints_inference(img, image_name,data, output_folder,num_keypoints):
     skeleton = CAR_SKELETON_24 if num_keypoints ==24 else CAR_SKELETON_66
-    colors =  plt.cm.tab20( (10./9*np.arange(20*9/10)).astype(int) )
+    colors =  np.array(
+       [[0.12156863, 0.46666667, 0.70588235, 1.        ],
+       [0.68235294, 0.78039216, 0.90980392, 1.        ],
+       [1.        , 0.49803922, 0.05490196, 1.        ],
+       [1.        , 0.73333333, 0.47058824, 1.        ],
+       [0.17254902, 0.62745098, 0.17254902, 1.        ],
+       [0.59607843, 0.8745098 , 0.54117647, 1.        ],
+       [0.83921569, 0.15294118, 0.15686275, 1.        ],
+       [1.        , 0.59607843, 0.58823529, 1.        ],
+       [0.58039216, 0.40392157, 0.74117647, 1.        ],
+       [0.54901961, 0.3372549 , 0.29411765, 1.        ],
+       [0.76862745, 0.61176471, 0.58039216, 1.        ],
+       [0.89019608, 0.46666667, 0.76078431, 1.        ],
+       [0.96862745, 0.71372549, 0.82352941, 1.        ],
+       [0.49803922, 0.49803922, 0.49803922, 1.        ],
+       [0.78039216, 0.78039216, 0.78039216, 1.        ],
+       [0.7372549 , 0.74117647, 0.13333333, 1.        ],
+       [0.85882353, 0.85882353, 0.55294118, 1.        ],
+       [0.09019608, 0.74509804, 0.81176471, 1.        ]]
+    )
 
     for lst in data: 
       kps = lst["keypoints"]
