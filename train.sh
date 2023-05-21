@@ -1,1 +1,0 @@
-python -m torch.distributed.launch --nproc_per_node=2 --use_env main.py --coco_path ./data/ --batch_size 6 --num_queries 25 --set_cost_class 10
