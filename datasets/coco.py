@@ -47,10 +47,8 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         target["labels"] = target["labels"] - 1
 
         if self.split == "val" or self.split=="test":
-            target["image"] = {
-            "image":np.array(image.copy()),
-            "filename":self.coco.loadImgs(image_id)[0]['file_name']
-            }
+            target['image'] = np.array(img.copy())
+            target['file_name'] = self.coco.loadImgs(image_id)[0]['file_name']
         
         return img, target
 
