@@ -6,7 +6,7 @@ In this repository, you'll find all the code to run our project: 2D semantic key
 
 The idea of the project is to output the different keypoints of a car from an image input.
 Starting from OpenPifPaf, we had 2 main ideas: 
-1. Move to a full-transformer architecture where we input joint
+1. Move to a full-transformer architecture to give an image and output the keypoints as scalar values and the class as a single integer.  
 2. Make use of Data Augmentation specifically design to hide part of cars to help the network to be robust to occlusion. 
 
 Unfortunately, our journey was more complicated that it seems. 
@@ -111,9 +111,36 @@ This will generate keypoints in the Coco format for both training and validation
 
 The split has been made on the video name so that we don't cheat and get test video frames close to one in the training set. 
 
-### Train
+The different datasets object created from the annotation, images and segmentation are [coco](datasets/coco.py) (mostly taken from the []() with minor adjustments to our needs) and the [inference dataset](datasets/inference_dataset.py) which is used to make inference using our model. 
 
+### Train
+You can easily trained your model by giving the following command 
+```
+python train.py training_name --coco_path path/to/coco/annotations --batch_size 16
+```
+where `path/to/coco/annotations` is expected to have the following structures
+```
+annotations
+    ├── keypoints_test_24.json	
+    ├── keypoints_train_24.json	
+    └── keypoints_val_24.json
+test
+test_segm_npz
+train
+train_segm_npz
+val
+val_segm_npz
+```
+Training name is used to save the best model files in the snapshot folder. 
 
 ### Inference
+To run the inference script, you will need to provide at least the following arguments: 
+- `image_folder`: the folder in which we should look for the images
+- `pretrained_weight_path`: the pretrained models weights needed to make inference. 
+You can run the following command to use the inference script
 
+```
+python inference.py path/to/images path/to/model -j --viz --inference_out_folder path/to/folder --coco_path path/to/coco/annotations
+```
+If the path to coco annotations is given (the annotation files corresponding to the imagesin `path/to/images`), the performances will be computed and the Average precision at different level will be displayed. `--viz` allows to make the visualizations and save them in `inference_out_folder`. The option `-j` allows to save the output as a json file in the output folder.
 
