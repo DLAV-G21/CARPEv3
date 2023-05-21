@@ -62,10 +62,10 @@ class HungarianMatcher(nn.Module):
         # We flatten to compute the cost matrices in a batch
         out_prob = outputs["pred_logits"].flatten(0, 1).softmax(-1)  # [batch_size * num_queries, num_classes]
         out_keypoints = outputs["pred_keypoints"].flatten(0, 1)  # [batch_size * num_queries, (3 * 17) + 1]
-
+        nb_keypoints = 24
         C_pred = out_keypoints[:, :2]
-        Z_pred = out_keypoints[:, 2:36]
-        V_pred = out_keypoints[:, 36:]
+        Z_pred = out_keypoints[:, 2:2+nb_keypoints*2]
+        V_pred = out_keypoints[:, 2+nb_keypoints*2:]
         
         # Also concat the target labels and boxes
         tgt_ids = torch.cat([v["labels"] for v in targets])
@@ -73,13 +73,13 @@ class HungarianMatcher(nn.Module):
         tgt_keypoints = torch.cat([v["keypoints"] for v in targets])
         
         C_gt = tgt_keypoints[:, :2]
-        Z_gt = tgt_keypoints[:, 2:36]
-        V_gt = tgt_keypoints[:, 36:]
+        Z_gt = tgt_keypoints[:, 2:2+nb_keypoints*2]
+        V_gt = tgt_keypoints[:, 2+nb_keypoints*2:]
 
-        C_gt_expand = torch.repeat_interleave(C_gt.unsqueeze(1), 17, dim=1).view(-1,34)
+        C_gt_expand = torch.repeat_interleave(C_gt.unsqueeze(1), nb_keypoints, dim=1).view(-1,nb_keypoints*2)
         A_gt = C_gt_expand + Z_gt
 
-        C_pred_expand = torch.repeat_interleave(C_pred.unsqueeze(1), 17, dim=1).view(-1,34)
+        C_pred_expand = torch.repeat_interleave(C_pred.unsqueeze(1), nb_keypoints, dim=1).view(-1,nb_keypoints*2)
         A_pred = C_pred_expand + Z_pred
 
         # Compute the classification cost. Contrary to the loss, we don't use the NLL,

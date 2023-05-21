@@ -44,7 +44,7 @@ def crop(image, target, region):
         cropped_keypoints = torch.min(cropped_keypoints, max_size)
         cropped_keypoints = cropped_keypoints.clamp(min=0)
         cropped_keypoints = torch.cat([cropped_keypoints, keypoints.view(-1, 3)[:,2].unsqueeze(1)], dim=1)
-        target["keypoints"] = cropped_keypoints.view(target["keypoints"].shape[0], 17, 3)
+        target["keypoints"] = cropped_keypoints.view(target["keypoints"].shape[0], 24, 3)
         fields.append("keypoints")
 
     if "masks" in target:
@@ -105,7 +105,7 @@ def rotate(image, target, angle):
         keypoints = [torch.from_numpy(cv2.transform(np.array([[[keypoint[0], keypoint[1]]]]), matrix).squeeze()) for keypoint in keypoints]
         keypoints = torch.stack(keypoints, dim=0)
         v =  target["keypoints"].view(-1,3)[:,2].unsqueeze(1)
-        keypoints = torch.cat([keypoints, v], dim=1).view(-1,17,3)
+        keypoints = torch.cat([keypoints, v], dim=1).view(-1,24,3)
       
         target["keypoints"] = keypoints
 
@@ -326,14 +326,14 @@ class Normalize(object):
            
             # get the distance between the center of the keypoints and the center of the image
             cxcy_expand = cxcy.clone()
-            cxcy_expand = torch.repeat_interleave(cxcy_expand.unsqueeze(1) , 17, dim=1)
+            cxcy_expand = torch.repeat_interleave(cxcy_expand.unsqueeze(1) , 24, dim=1)
             offsets = keypoints[:,:,:2] - cxcy_expand
 
             C = cxcy                                # center of the keypoints  torch.Size([number of persons, 2])
-            Z = offsets.view(-1, 2*17)             # offsets of the keypoints torch.Size([number of persons, 17, 2]) --> n,34
+            Z = offsets.view(-1, 2*24)             # offsets of the keypoints torch.Size([number of persons, 17, 2]) --> n,34
 
             C = C / torch.tensor([w, h], dtype=torch.float32)
-            Z = Z / torch.tensor([w, h] * 17, dtype = torch.float32)
+            Z = Z / torch.tensor([w, h] * 24, dtype = torch.float32)
 
             all_keypoints = torch.cat([C, Z, V], dim=1)  # torch.Size([number of persons, 2+34+17])
             target["keypoints"] = all_keypoints 

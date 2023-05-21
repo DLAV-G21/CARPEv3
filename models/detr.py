@@ -34,7 +34,8 @@ class DETR(nn.Module):
 		self.num_queries = num_queries
 		self.transformer = transformer
 		hidden_dim = transformer.d_model
-		num_body_parts = 53 # 17  (del_x1, del_y1, vis) * 17 + 2 
+		nb_keypoints = 24
+		num_body_parts = nb_keypoints*3+2 # 17  (del_x1, del_y1, vis) * 17 + 2 
 		self.class_embed_out = nn.Linear(hidden_dim, num_classes + 1)
 		self.pose_embed = MLP(hidden_dim, hidden_dim, num_body_parts, 3)
 		self.query_embed = nn.Embedding(num_queries, hidden_dim)
@@ -154,21 +155,22 @@ class SetCriterion(nn.Module):
 		   The target boxes are expected in format (center_x, center_y, w, h), normalized by the image size.
 		"""
 		#assert 'pred_boxes' in outputs
+		nb_keypoints=24
 		idx = self._get_src_permutation_idx(indices)
 		src_boxes = outputs['pred_keypoints'][idx]
 
 		C_pred = src_boxes[:, :2]
-		Z_pred = src_boxes[:, 2:36]
-		V_pred = src_boxes[:, 36:]
+		Z_pred = src_boxes[:, 2:2+nb_keypoints*2]
+		V_pred = src_boxes[:, 2+nb_keypoints*2:]
 	
 		targets_keypoints = torch.cat([t['keypoints'][i] for t, (_, i) in zip(targets, indices)], dim=0)
 		C_gt = targets_keypoints[:, :2]
-		Z_gt = targets_keypoints[:, 2:36]
-		V_gt = targets_keypoints[:, 36:]
+		Z_gt = targets_keypoints[:, 2:2+nb_keypoints*2]
+		V_gt = targets_keypoints[:, 2+nb_keypoints*2:]
 
-		C_gt_expand = torch.repeat_interleave(C_gt.unsqueeze(1), 17, dim=1).view(-1,34)
+		C_gt_expand = torch.repeat_interleave(C_gt.unsqueeze(1), nb_keypoints, dim=1).view(-1,nb_keypoints*2)
 		A_gt = C_gt_expand + Z_gt
-		C_pred_expand = torch.repeat_interleave(C_pred.unsqueeze(1), 17, dim=1).view(-1,34)
+		C_pred_expand = torch.repeat_interleave(C_pred.unsqueeze(1), nb_keypoints, dim=1).view(-1,nb_keypoints*2)
 		A_pred = C_pred_expand + Z_pred
 
 		# Compute the L1 and L2 regression loss
@@ -244,7 +246,6 @@ class SetCriterion(nn.Module):
 					  The expected keys in each dict depends on the losses applied, see each loss' doc
 		"""
 		outputs_without_aux = {k: v for k, v in outputs.items() if k != 'aux_outputs'}
-
 		
 		# Compute the average number of target boxes accross all nodes, for normalization purposes
 		num_boxes = sum(len(t["labels"]) for t in targets)

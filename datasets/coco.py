@@ -55,13 +55,13 @@ import datasets.transforms as T
 
 
 class CocoDetection(torch.utils.data.Dataset):
-    def __init__(self, root_path, transforms, return_masks):
+    def __init__(self, img_folder, ann_file, segmentation_folder, transforms, return_masks):
         super(CocoDetection, self).__init__()
         self._transforms = transforms
         self.prepare = ConvertCocoPolysToMask(return_masks)
 
-        self.img_folder = root_path / "train2017"
-        self.coco=COCO(root_path / "annotations/person_keypoints_train2017.json")
+        self.img_folder = img_folder
+        self.coco=COCO(ann_file)
 
         imgIds = sorted(self.coco.getImgIds())
 
@@ -229,12 +229,13 @@ def make_coco_transforms(image_set):
 def build(image_set, args):
     root = Path(args.coco_path)
     assert root.exists(), f'provided COCO path {root} does not exist'
-    mode = 'person_keypoints'
+    mode = 'keypoints'
     PATHS = {
-        "train": (root / "train2017", root / "annotations" / f'{mode}_train2017.json'),
-        "val": (root / "val2017", root / "annotations" / f'{mode}_val2017.json'),
+        "train": (root / "train",  root/"annotations"/f'{mode}_train_{24}.json',root/"train_segm_npz"),
+        "val": (root / "val",  root/"annotations"/f'{mode}_val_{24}.json',root/"val_segm_npz"),
+        "test": (root / "test", root/"annotations"/f'{mode}_test_{24}.json',root/"test_segm_npz")
     }
 
-    img_folder, ann_file = PATHS[image_set]
-    dataset = CocoDetection(root, transforms=make_coco_transforms(image_set), return_masks=args.masks)
+    img_folder, ann_file, segmentation_folder = PATHS[image_set]
+    dataset = CocoDetection(img_folder, ann_file, segmentation_folder, transforms=make_coco_transforms(image_set), return_masks=args.masks)
     return dataset
