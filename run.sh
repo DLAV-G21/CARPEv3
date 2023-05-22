@@ -11,4 +11,4 @@
 #SBATCH --time 12:00:00
 
 source ../venvs/venv-g21/bin/activate
-python3 train.py baseline --coco_path carpe_data --batch_size 16 --num_queries 25 --set_cost_class 10
+python3 train.py baseline --coco_path carpe_data --batch_size 16 --num_queries 25 --set_cost_class 10 --eval
