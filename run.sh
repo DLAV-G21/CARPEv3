@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --chdir /home/plumey/ProjectRepository
+#SBATCH --chdir /home/plumey/ProjectV3
 #SBATCH --nodes 1
 #SBATCH --ntasks 1
 #SBATCH --cpus-per-task 4
