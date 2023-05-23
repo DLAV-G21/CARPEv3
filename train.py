@@ -235,9 +235,6 @@ def main(args):
         
         log.info(f"Saving model at epoch {epoch}...")
         checkpoint_paths = [output_dir / f'checkpoint{epoch:04}.pth']
-        # extra checkpoint before LR drop and every 100 epochs
-        if (epoch + 1) % args.lr_drop == 0 or (epoch + 1) % 100 == 0:
-            checkpoint_paths.append(output_dir / f'checkpoint{epoch:04}.pth')
         for checkpoint_path in checkpoint_paths:
             torch.save({
                 'model': model.state_dict(),
@@ -248,9 +245,9 @@ def main(args):
             }, checkpoint_path)
 
         if epoch > 2:
-            to_remove = [output_dir / f'checkpoint{epoch-2:04}.pth']
+            to_remove = [output_dir / f'checkpoint{(epoch-2):04}.pth']
             for rm in to_remove:
-                if os.path.isfile(to_remove):
+                if os.path.isfile(rm):
                     os.remove(rm)
 
         log.info(f"Starting evaluation step for epoch {epoch}...")
