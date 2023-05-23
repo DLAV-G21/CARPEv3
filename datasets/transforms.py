@@ -324,10 +324,10 @@ class Normalize(object):
             target["boxes"] = boxes
         
         if "keypoints" in target:
-            keypoints = target["keypoints"]  #  (num_person, num_keypoints, 3)
+            keypoints = target["keypoints"]
             num_keypoints = keypoints.shape[1]
          
-            V = keypoints[:,:,2]        # visibility of the keypoints torch.Size([number of persons, 17])
+            V = keypoints[:,:,2]
             V[V == 2] = 1
 
             # get centers of keypoints
@@ -339,15 +339,13 @@ class Normalize(object):
             offsets = keypoints[:,:,:2] - cxcy_expand
             offsets[V <= 0] = 0
 
-            C = cxcy                              # center of the keypoints  torch.Size([number of persons, 2])
-            Z = offsets.view(-1, 2*num_keypoints) # offsets of the keypoints torch.Size([number of persons, 17, 2]) --> n,34
+            C = cxcy
+            Z = offsets.view(-1, 2*num_keypoints)
 
             C = C / torch.tensor([w, h], dtype=torch.float32)
             Z = Z / torch.tensor([w, h] * num_keypoints, dtype = torch.float32)
 
-            all_keypoints = torch.cat([C, Z, V], dim=1)  # torch.Size([number of persons, 2+34+17])
-            target["keypoints_original"] = target["keypoints"]
-            target["keypoints_offsets"] = offsets
+            all_keypoints = torch.cat([C, Z, V], dim=1)
             target["keypoints"] = all_keypoints 
         return image, target
 
