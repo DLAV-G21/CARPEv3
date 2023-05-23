@@ -193,8 +193,8 @@ def main(args):
         model.load_state_dict(model_state)
 
     elif os.path.exists(args.pretrained_weight_path):
-        log.info("Loading pretrained weights from "+args.pretrained_keypoints)
-        pretrained_state = torch.load(args.pretrained_keypoints)["model"]
+        log.info("Loading pretrained weights from "+args.pretrained_weight_path)
+        pretrained_state = torch.load(args.pretrained_weight_path)["model"]
         model_state = model.state_dict()
         for k,v in model.state_dict().items():
             if k not in pretrained_state:
