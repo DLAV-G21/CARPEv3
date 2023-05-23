@@ -121,6 +121,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epo
 
 def plot_and_save_keypoints_inference(img, image_name, data, output_folder,num_keypoints):
     skeleton = CAR_SKELETON_24 if num_keypoints ==24 else CAR_SKELETON_66
+    
     colors =  np.array([
        [0.12156863, 0.46666667, 0.70588235],
        [0.68235294, 0.78039216, 0.90980392],
@@ -166,4 +167,5 @@ def plot_and_save_keypoints_inference(img, image_name, data, output_folder,num_k
       for a in all_found_kps:
         r,g,bc = colors[a%len(colors)]
         cv2.circle(img, all_kps_coordinate[a-1],10, color=[int(bc*255),int(g*255),int(r*255)],thickness=-1)
+    img = cv.cvtColor(image, cv.COLOR_BGR2RGB)
     cv2.imwrite(os.path.join(output_folder, image_name),img)
