@@ -76,7 +76,7 @@ def get_args_parser():
     # * Matcher
     parser.add_argument('--set_cost_class', default=10, type=float,
                         help="Class coefficient in the matching cost")
-    parser.add_argument('--set_cost_keypoints', default=1, type=float,
+    parser.add_argument('--set_cost_keypoints', default=5, type=float,
                         help="L1 keypoints coefficient in the matching cost")
     # * Loss coefficients
     parser.add_argument('--mask_loss_coef', default=1, type=float)
@@ -160,17 +160,6 @@ def main(args):
     sampler_train = torch.utils.data.RandomSampler(dataset_train)
     sampler_val = torch.utils.data.SequentialSampler(dataset_val)
 
-    if os.path.exists(args.pretrained_weight_path):
-        log.info("Loading pretrained weights from "+args.pretrained_weight_path)
-        pretrained_state = torch.load(args.pretrained_weight_path)["model"]
-        model_state = model.state_dict()
-        for k,v in model.state_dict().items():
-            if k not in pretrained_state:
-                log.info("The following key "+k+" has not been found in the pretrained dictionary.")
-                pretrained_state[k] = v
-
-        model_state.update(pretrained_state)
-        model.load_state_dict(model_state)
 
     batch_sampler_train = torch.utils.data.BatchSampler(
         sampler_train, args.batch_size, drop_last=True)
@@ -191,12 +180,23 @@ def main(args):
     os.makedirs(output_dir)
     output_dir = Path(output_dir)
 
-    if args.pretrained_keypoints:
-        pass
-    elif args.pretrained_detr:
+    
+    if args.pretrained_detr:
         model_ckpt = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
         model_state = model.state_dict()
         pretrained_state = { k:v for k,v in model_ckpt.state_dict().items() if k in model_state and v.size() == model_state[k].size() }
+        for k,v in model.state_dict().items():
+            if k not in pretrained_state:
+                log.info("The following key "+k+" has not been found in the pretrained dictionary.")
+                pretrained_state[k] = v
+
+        model_state.update(pretrained_state)
+        model.load_state_dict(model_state)
+
+    elif os.path.exists(args.pretrained_keypoints):
+        log.info("Loading pretrained weights from "+args.pretrained_keypoints)
+        pretrained_state = torch.load(args.pretrained_keypoints)["model"]
+        model_state = model.state_dict()
         for k,v in model.state_dict().items():
             if k not in pretrained_state:
                 log.info("The following key "+k+" has not been found in the pretrained dictionary.")
@@ -247,6 +247,12 @@ def main(args):
                 'epoch': epoch,
                 'args': args,
             }, checkpoint_path)
+
+        if epoch > 2:
+            to_remove = [output_dir / f'checkpoint{epoch-2:04}.pth']
+            for rm in to_remove:
+                if os.path.isfile(to_remove):
+                    os.remove(rm)
 
         log.info(f"Starting evaluation step for epoch {epoch}...")
         coco_evaluator = evaluate(

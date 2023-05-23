@@ -132,29 +132,42 @@ class ConvertCocoPolysToMask(object):
         return image, target
 
 
-def make_coco_transforms(image_set, size, apply_augm):
+
+def make_coco_transforms(image_set):
 
     normalize = T.Compose([
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
+
+    # scales = [480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800]
+    scales = [480, 500]
+
   
     if image_set == 'train':
-        lst = []
-        
-        if apply_augm: 
-            lst.append(T.RandomHorizontalFlip())
-        lst.append(T.Resize(size))
-        lst.append(normalize)
-        return T.Compose(lst)       
-        
-
-    if image_set == 'val' or image_set =="test":
         return T.Compose([
-            T.Resize(size),
+            T.RandomHorizontalFlip(),
+            T.RandomSelect(
+                T.Compose([
+                T.Rotate(0.5, [-25, 25]),
+                T.RandomResize(scales, max_size=512),
+                ]),
+                T.Compose([
+                    T.RandomResize([400, 500]),
+                    T.RandomSizeCrop(384, 600),
+                    T.RandomResize(scales, max_size=512),
+                ])
+            ),
             normalize,
         ])
-    
+
+
+    if image_set == 'val'or image_set =="test":
+        return T.Compose([
+            T.RandomResize([800], max_size=1333),
+            normalize,
+        ])
+
     raise ValueError(f'unknown {image_set}')
 
 
@@ -187,7 +200,7 @@ def build(image_set, args):
 
     img_folder, ann_file, segmentation_folder = PATHS[image_set]
     dataset = CocoDetection(img_folder, ann_file, 
-        transforms=make_coco_transforms(image_set,args.input_image_resize,args.apply_augmentation), 
+        transforms=make_coco_transforms(image_set), 
         al_transforms=albumentations_transform(image_set),
         apply_augm=args.apply_augmentation, 
         apply_occlusion_augmentation=args.apply_occlusion_augmentation,
