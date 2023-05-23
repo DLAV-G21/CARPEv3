@@ -117,4 +117,4 @@ class HungarianMatcher(nn.Module):
 
 
 def build_matcher(args):
-    return HungarianMatcher(cost_class=args.set_cost_class, num_keypoints=args.num_keypoints,splited=False)
+    return HungarianMatcher(cost_class=args.set_cost_class, num_keypoints=args.num_keypoints)
