@@ -31,7 +31,7 @@ class HungarianMatcher(nn.Module):
         self.l_vis = 0.2
         self.l_ctr = 0.5
         self.l_abs = 4
-    
+
     @torch.no_grad()
     def forward(self, outputs, targets):
         if not self.splited:
