@@ -44,18 +44,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         optimizer.step()
 
 
-        losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
-
-        if logger is not None: 
-            logger.add_scalar("Loss/train",losses.item(),len_dl*epoch + i)
-
-        optimizer.zero_grad()
-        losses.backward()
-        pbar.set_description(f"Epoch {epoch}, loss = {losses.item():.4f}")
-        if max_norm > 0:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
-        optimizer.step()
-
         if visualize_folder is not None:
             results = postprocessors['keypoints'](outputs, targets)
             if not os.path.exists(visualize_folder):

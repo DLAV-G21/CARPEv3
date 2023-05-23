@@ -25,7 +25,7 @@ sys.out = None
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
     parser.add_argument("training_name",type=str)
-    parser.add_argument("--pretrained_weight_path",type=str)
+    parser.add_argument("--pretrained_weight_path",type=str,default="")
     parser.add_argument("-j", "--json",type=str,help="Path to the json output file")
     parser.add_argument("-v","--visualize_folder",type=str, help="The folder in which we should store the output images")
 
@@ -120,7 +120,6 @@ def get_args_parser():
     parser.add_argument("--input_image_resize", default=(640,480), type=tuple)
 
     parser.add_argument('--pretrained_detr',  help='resume from pretrained detr', action="store_true")
-    parser.add_argument("--pretrained_keypoints",  help='resume from pretrained keypoints detector', action="store_true")
 
     return parser
 
@@ -193,7 +192,7 @@ def main(args):
         model_state.update(pretrained_state)
         model.load_state_dict(model_state)
 
-    elif os.path.exists(args.pretrained_keypoints):
+    elif os.path.exists(args.pretrained_weight_path):
         log.info("Loading pretrained weights from "+args.pretrained_keypoints)
         pretrained_state = torch.load(args.pretrained_keypoints)["model"]
         model_state = model.state_dict()

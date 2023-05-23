@@ -346,7 +346,7 @@ class Normalize(object):
             Z = Z / torch.tensor([w, h] * num_keypoints, dtype = torch.float32)
 
             all_keypoints = torch.cat([C, Z, V], dim=1)
-            target["keypoints"] = all_keypoints 
+            target["keypoints"] = all_keypoints
         return image, target
 
 

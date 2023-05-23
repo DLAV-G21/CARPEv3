@@ -191,7 +191,6 @@ class SetCriterion(nn.Module):
 		if is_dist_avail_and_initialized():
 			torch.distributed.all_reduce(num_queries)
 		num_queries = torch.clamp(num_queries / get_world_size(), min=1).item()
-
 		# Retrieve the matching between the outputs of the last layer and the targets
 		indices = self.matcher(outputs_without_aux, targets)
 
