@@ -10,17 +10,19 @@ import numpy as np
 import torch.utils.data
 
 from os import listdir
-from os.path import isfile, isdir, join
+from os.path import isfile, isdir, join, split
 import datasets.transforms as T
 
-class InferenceDataset(torch.utils.Dataset):
+class InferenceDataset(torch.utils.data.Dataset):
     def __init__(self, img, transforms):
         super().__init__()
         self._transforms = transforms
         if isdir(img):
-            self.imgs = [f for f in listdir(img) if isfile(join(img,f)) and (f.endsWith(".png") or f.endsWith(".jpg"))]
-        elif isfile(img) and (img.endsWith(".png") or img.endsWith(".jpg")):
-            self.imgs = [img]
+            self.folder = img
+            self.imgs = [f for f in listdir(img) if isfile(join(img,f)) and (f.endswith(".png") or f.endswith(".jpg"))]
+        elif isfile(img) and (img.endswith(".png") or img.endswith(".jpg")):
+            self.folder, self.imgs = split(img)
+            self.imgs = [self.imgs]
         else:
             raise ValueError("The given path should be a folder containing all the images for which the model should make predictions.")
 
@@ -29,10 +31,10 @@ class InferenceDataset(torch.utils.Dataset):
 
     def __getitem__(self, idx):
         img_name = self.imgs[idx]
-        filename = join(self.img_folder,img_name)
+        filename = join(self.folder, img_name)
         img = Image.open(filename)
         target = {
-                    'image_id': idx, 'annotations': {},
+                    'image_id': torch.as_tensor([idx]), 'annotations': None,
                     'image': np.array(img), 'filename':img_name,
                     'orig_size': torch.as_tensor([img.height, img.width]),
                     'size': torch.as_tensor([img.height, img.width]),
@@ -55,8 +57,8 @@ def transform(size):
     ])
 
 
-def build_inference(image_set, args):
-    dataset = InferenceDataset(img_folder=args.image_folder, 
+def build_inference(args):
+    dataset = InferenceDataset(img=args.image, 
         transforms=transform(args.input_image_resize)
         )
     return dataset

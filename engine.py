@@ -45,15 +45,17 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 @torch.no_grad()
 def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, output_dir, epoch=0, logger=None,num_keypoints=24,visualize_keypoints=False,out_folder=""):
     model.eval()
-    criterion.eval()
+    if criterion is not None:
+        criterion.eval()
     iou_types = ["keypoints"]
     coco_evaluator = None
     if base_ds is not None:
         coco_evaluator = CocoEvaluator(base_ds, iou_types)
 
     # From openpifpaf
-    CAR_SIGMAS = [0.05] * num_keypoints
-    coco_evaluator.set_scale(np.array(CAR_SIGMAS))
+    if coco_evaluator is not None:
+        CAR_SIGMAS = [0.05] * num_keypoints
+        coco_evaluator.set_scale(np.array(CAR_SIGMAS))
 
     len_dl = len(data_loader)
     pbar = tqdm(data_loader)
@@ -61,18 +63,20 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
     for i, (samples, targets) in enumerate(pbar):
         samples = samples.to(device)
 
-        targets = [{k: v.to(device) if k != "image" and k != "filename" else v for k, v in t.items()} for t in targets ]
+        targets = [{k: v.to(device) if (v is not None) and (k not in ["image", "filename"]) else v for k, v in t.items()} for t in targets ]
 
         outputs = model(samples)
-        loss_dict = criterion(outputs, targets)
-        weight_dict = criterion.weight_dict
+        if criterion is not None:
+            loss_dict = criterion(outputs, targets)
+            weight_dict = criterion.weight_dict
 
-        losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
+            losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
+            pbar.set_description(f"Epoch {epoch}, loss = {losses.item():.4f}")
 
-        if logger is not None: 
-            logger.add_scalar("Loss/train",losses.item(),len_dl*epoch + i)
+            if logger is not None: 
+                logger.add_scalar("Loss/train",losses.item(),len_dl*epoch + i)
+
         results = postprocessors['keypoints'](outputs, targets)
-        pbar.set_description(f"Epoch {epoch}, loss = {losses.item():.4f}")
 
         if coco_evaluator is not None:
             coco_evaluator.update_keypoints(results)
@@ -80,7 +84,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
         if visualize_keypoints:
             for target in targets:
                 filt =[out for out in results if out["image_id"] == target["image_id"]]
-                plot_and_save_keypoints_inference(targets["image"], targets["filename"], filt, out_folder,num_keypoints)
+                plot_and_save_keypoints_inference(target["image"], target["filename"], filt, out_folder, num_keypoints)
 
 
     if (coco_evaluator is not None) and (len(coco_evaluator.keypoint_predictions) > 0):
@@ -104,27 +108,27 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
     else:
        return None
 
-def plot_and_save_keypoints_inference(img, image_name,data, output_folder,num_keypoints):
+def plot_and_save_keypoints_inference(img, image_name, data, output_folder,num_keypoints):
     skeleton = CAR_SKELETON_24 if num_keypoints ==24 else CAR_SKELETON_66
-    colors =  np.array(
-       [[0.12156863, 0.46666667, 0.70588235, 1.        ],
-       [0.68235294, 0.78039216, 0.90980392, 1.        ],
-       [1.        , 0.49803922, 0.05490196, 1.        ],
-       [1.        , 0.73333333, 0.47058824, 1.        ],
-       [0.17254902, 0.62745098, 0.17254902, 1.        ],
-       [0.59607843, 0.8745098 , 0.54117647, 1.        ],
-       [0.83921569, 0.15294118, 0.15686275, 1.        ],
-       [1.        , 0.59607843, 0.58823529, 1.        ],
-       [0.58039216, 0.40392157, 0.74117647, 1.        ],
-       [0.54901961, 0.3372549 , 0.29411765, 1.        ],
-       [0.76862745, 0.61176471, 0.58039216, 1.        ],
-       [0.89019608, 0.46666667, 0.76078431, 1.        ],
-       [0.96862745, 0.71372549, 0.82352941, 1.        ],
-       [0.49803922, 0.49803922, 0.49803922, 1.        ],
-       [0.78039216, 0.78039216, 0.78039216, 1.        ],
-       [0.7372549 , 0.74117647, 0.13333333, 1.        ],
-       [0.85882353, 0.85882353, 0.55294118, 1.        ],
-       [0.09019608, 0.74509804, 0.81176471, 1.        ]]
+    colors =  np.array([
+       [0.12156863, 0.46666667, 0.70588235],
+       [0.68235294, 0.78039216, 0.90980392],
+       [1.        , 0.49803922, 0.05490196],
+       [1.        , 0.73333333, 0.47058824],
+       [0.17254902, 0.62745098, 0.17254902],
+       [0.59607843, 0.8745098 , 0.54117647],
+       [0.83921569, 0.15294118, 0.15686275],
+       [1.        , 0.59607843, 0.58823529],
+       [0.58039216, 0.40392157, 0.74117647],
+       [0.54901961, 0.3372549 , 0.29411765],
+       [0.76862745, 0.61176471, 0.58039216],
+       [0.89019608, 0.46666667, 0.76078431],
+       [0.96862745, 0.71372549, 0.82352941],
+       [0.49803922, 0.49803922, 0.49803922],
+       [0.78039216, 0.78039216, 0.78039216],
+       [0.7372549 , 0.74117647, 0.13333333],
+       [0.85882353, 0.85882353, 0.55294118],
+       [0.09019608, 0.74509804, 0.81176471]]
     )
 
     for lst in data: 
@@ -145,10 +149,10 @@ def plot_and_save_keypoints_inference(img, image_name,data, output_folder,num_ke
 
       for idx, (a,b) in enumerate(skeleton):
         if (a,b) in set_of_pairs:
-          r,g,bc,ac = colors[idx%len(colors)]                  
+          r,g,bc = colors[idx%len(colors)]                  
           cv2.line(img,all_kps_coordinate[a-1], all_kps_coordinate[b-1],color=[int(bc*255),int(g*255),int(r*255)],thickness=18)
 
       for a in all_found_kps:
-        r,g,bc,ac = colors[a%len(colors)]
+        r,g,bc = colors[a%len(colors)]
         cv2.circle(img, all_kps_coordinate[a-1],10, color=[int(bc*255),int(g*255),int(r*255)],thickness=-1)
-    cv2.imwrite(os.path.join(output_folder, f"{image_name}"),img)
+    cv2.imwrite(os.path.join(output_folder, image_name),img)

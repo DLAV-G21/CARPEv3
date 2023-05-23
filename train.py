@@ -25,6 +25,7 @@ sys.out = None
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
     parser.add_argument("training_name",type=str)
+    parser.add_argument("--pretrained_weight_path",type=str)
 
     parser.add_argument('--lr', default=1e-4, type=float)
     parser.add_argument('--lr_backbone', default=1e-5, type=float)
@@ -87,7 +88,7 @@ def get_args_parser():
 
     # dataset parameters
     parser.add_argument('--dataset_file', default='coco')
-    parser.add_argument('--coco_path', type=str, default='carp_data')
+    parser.add_argument('--coco_path', type=str, default='carpe_data')
     parser.add_argument('--remove_difficult', action='store_true')
 
     parser.add_argument('--output_dir', default='snapshots',
@@ -155,9 +156,21 @@ def main(args):
     dataset_train = build_dataset(image_set='train', args=args)
     dataset_val = build_dataset(image_set='val', args=args)
     dataset_test = build_dataset(image_set="test", args=args)
-
+        
     sampler_train = torch.utils.data.RandomSampler(dataset_train)
     sampler_val = torch.utils.data.SequentialSampler(dataset_val)
+
+    if os.path.exists(args.pretrained_weight_path):
+        log.info("Loading pretrained weights from "+args.pretrained_weight_path)
+        pretrained_state = torch.load(args.pretrained_weight_path)["model"]
+        model_state = model.state_dict()
+        for k,v in model.state_dict().items():
+            if k not in pretrained_state:
+                log.info("The following key "+k+" has not been found in the pretrained dictionary.")
+                pretrained_state[k] = v
+
+        model_state.update(pretrained_state)
+        model.load_state_dict(model_state)
 
     batch_sampler_train = torch.utils.data.BatchSampler(
         sampler_train, args.batch_size, drop_last=True)

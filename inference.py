@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 
 import util.misc as utils
 from datasets import get_coco_api_from_dataset
-from datasets.coco import CocoDataset, make_coco_transforms
+from datasets.coco import CocoDetection, make_coco_transforms
 from datasets.inference_dataset import build_inference
 from engine import evaluate
 from models import build_model
@@ -20,11 +20,11 @@ from models import build_model
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
-    parser.add_argument("pretrained_weight_path")
-    parser.add_argument("image_folder",type=str)
+    parser.add_argument("pretrained_weight_path",type=str)
+    parser.add_argument("image",type=str)
     parser.add_argument('--coco_file_path', type=str)
     parser.add_argument("-j",help="If we should write json output to disk",action="store_true")
-    parser.add_argument("--viz", help="If we should display keypoints on images",action="store_true")
+    parser.add_argument("-v","--viz", help="If we should display keypoints on images",action="store_true")
     parser.add_argument("--inference_out_folder",type=str, help="The folder in which we should store the output")
 
     parser.add_argument('--lr', default=1e-4, type=float)
@@ -62,6 +62,12 @@ def get_args_parser():
                         help="Number of query slots")
     parser.add_argument('--pre_norm', action='store_true')
 
+    # * Segmentation
+    parser.add_argument('--masks', action='store_true',
+                        help="Train segmentation head if the flag is provided")
+    # Loss
+    parser.add_argument('--no_aux_loss', dest='aux_loss', action='store_false',
+                        help="Disables auxiliary decoding losses (loss at each layer)")
     # * Matcher
     parser.add_argument('--set_cost_class', default=1, type=float,
                         help="Class coefficient in the matching cost")
@@ -77,24 +83,18 @@ def get_args_parser():
     parser.add_argument('--eos_coef', default=0.1, type=float,
                         help="Relative classification weight of the no-object class")
 
+    # for keypoints
+    parser.add_argument('--num_keypoints', default=24, type=int,
+                        help='number of keypoints')
+    
     # dataset parameters
     parser.add_argument('--dataset_file', default='coco')
     parser.add_argument('--remove_difficult', action='store_true')
-
-    parser.add_argument('--output_dir', default=os.path.join("models","model_saves"),
-                        help='path where to save, empty for no saving')
+    
     parser.add_argument('--device', default='cuda',
                         help='device to use for training / testing')
-    parser.add_argument('--seed', default=42, type=int)
-    parser.add_argument('--pretrained_detr',  help='resume from pretrained detr', action="store_true")
     parser.add_argument("--pretrained_keypoints",  help='resume from pretrained keypoints detector', action="store_true")
-    parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
-                        help='start epoch')
-    parser.add_argument('--eval', action='store_true')
     parser.add_argument('--num_workers', default=2, type=int)
-    parser.add_argument("--calibration_epochs", default=1,type=int)
-    parser.add_argument("--apply_augmentation", action="store_true", help="If we apply the data augmentation")
-    parser.add_argument("--apply_occlusion_augmentation", action="store_true", help="If we should apply the occlusion augmentation")
     parser.add_argument("--input_image_resize",default=(480,640),type=tuple)
 
     return parser
@@ -106,17 +106,12 @@ def main(args):
 
     device = torch.device(args.device)
 
-    # fix the seed for reproducibility
-    seed = args.seed + utils.get_rank()
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
     model, criterion, postprocessors = build_model(args)
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     log.info(f'Number of trainable parameters {n_parameters}' )
 
-    dataset_val = CocoDataset(args.image_folder, args.coco_file_path, make_coco_transforms("val",args.input_image_resize,False), None, None, None, None, "val")\
+    dataset_val = CocoDetection(args.image_folder, args.coco_file_path, make_coco_transforms("val",args.input_image_resize,False), None, None, None, None, "val")\
          if args.coco_file_path is not None else \
          build_inference(args)
 
@@ -129,9 +124,9 @@ def main(args):
         os.makedirs(args.inference_out_folder)
 
     if os.path.exists(args.pretrained_weight_path):
-        model_ckpt = torch.load(args.pretrained_weight_path)["model"]
+        log.info("Loading pretrained weights from "+args.pretrained_weight_path)
+        pretrained_state = torch.load(args.pretrained_weight_path)["model"]
         model_state = model.state_dict()
-        pretrained_state = { k:v for k,v in model_ckpt.items() if k in model_state and v.size() == model_state[k].size() }
         for k,v in model.state_dict().items():
             if k not in pretrained_state:
                 log.info("The following key "+k+" has not been found in the pretrained dictionary.")
@@ -148,12 +143,12 @@ def main(args):
         base_ds = get_coco_api_from_dataset(dataset_val)
 
     coco_evaluator = evaluate(model, 
-                            criterion, 
+                            criterion if args.coco_file_path is not None else None, 
                             postprocessors,
                             data_loader_val,
                             base_ds,
                             device,
-                            args.output_dir,
+                            args.inference_out_folder,
                             num_keypoints=args.num_keypoints,
                             visualize_keypoints=args.viz,
                             out_folder=args.inference_out_folder)
@@ -162,6 +157,6 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('CARPE training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
-    if args.output_dir:
-        Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+    if args.inference_out_folder:
+        Path(args.inference_out_folder).mkdir(parents=True, exist_ok=True)
     main(args)
