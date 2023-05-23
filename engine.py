@@ -22,33 +22,34 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     len_dl = len(data_loader)
     pbar = tqdm(data_loader)
     pbar.set_description(f"Epoch {epoch}, loss = init")
-    for i, (samples, targets) in enumerate(pbar):
-        samples = samples.to(device)
-        targets =  [{k: v.to(device) if (v is not None) and (k not in ["image", "filename"]) else v for k, v in t.items()} for t in targets ]
+    with torch.no_grad():
+        for i, (samples, targets) in enumerate(pbar):
+            samples = samples.to(device)
+            targets =  [{k: v.to(device) if (v is not None) and (k not in ["image", "filename"]) else v for k, v in t.items()} for t in targets ]
 
-        outputs = model(samples)
-        loss_dict = criterion(outputs, targets)
-        weight_dict = criterion.weight_dict
+            outputs = model(samples)
+    #        loss_dict = criterion(outputs, targets)
+    #        weight_dict = criterion.weight_dict
+    #
+    #        losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
+    #
+    #        if logger is not None: 
+    #            logger.add_scalar("Loss/train",losses.item(),len_dl*epoch + i)
+    #
+    #        optimizer.zero_grad()
+    #        losses.backward()
+    #        pbar.set_description(f"Epoch {epoch}, loss = {losses.item():.4f}")
+    #        if max_norm > 0:
+    #            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
+    #        optimizer.step()
 
-        losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
-
-        if logger is not None: 
-            logger.add_scalar("Loss/train",losses.item(),len_dl*epoch + i)
-
-        optimizer.zero_grad()
-        losses.backward()
-        pbar.set_description(f"Epoch {epoch}, loss = {losses.item():.4f}")
-        if max_norm > 0:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
-        optimizer.step()
-
-        if visualize_folder is not None:
-            results = postprocessors['keypoints'](outputs, targets)
-            if not os.path.exists(visualize_folder):
-                os.makedirs(visualize_folder)
-            for target in targets:
-                filt =[out for out in results if out["image_id"] == target["image_id"]]
-                plot_and_save_keypoints_inference(target["image"], target["filename"], filt, visualize_folder, num_keypoints)
+            if visualize_folder is not None:
+                results = postprocessors['keypoints'](outputs, targets)
+                if not os.path.exists(visualize_folder):
+                    os.makedirs(visualize_folder)
+                for target in targets:
+                    filt =[out for out in results if out["image_id"] == target["image_id"]]
+                    plot_and_save_keypoints_inference(target["image"], target["filename"], filt, visualize_folder, num_keypoints)
 
 
 @torch.no_grad()
@@ -167,5 +168,5 @@ def plot_and_save_keypoints_inference(img, image_name, data, output_folder,num_k
       for a in all_found_kps:
         r,g,bc = colors[a%len(colors)]
         cv2.circle(img, all_kps_coordinate[a-1],10, color=[int(bc*255),int(g*255),int(r*255)],thickness=-1)
-    img = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     cv2.imwrite(os.path.join(output_folder, image_name),img)

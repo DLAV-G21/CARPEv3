@@ -68,12 +68,10 @@ def get_args_parser():
     parser.add_argument('--no_aux_loss', dest='aux_loss', action='store_false',
                         help="Disables auxiliary decoding losses (loss at each layer)")
     # * Matcher
-    parser.add_argument('--set_cost_class', default=1, type=float,
+    parser.add_argument('--set_cost_class', default=10, type=float,
                         help="Class coefficient in the matching cost")
-    parser.add_argument('--set_cost_bbox', default=5, type=float,
-                        help="L1 box/keypoints/links coefficient in the matching cost")
-    parser.add_argument('--set_cost_giou', default=2, type=float,
-                        help="giou box coefficient in the matching cost")
+    parser.add_argument('--set_cost_keypoints', default=1, type=float,
+                        help="L1 keypoints coefficient in the matching cost")
     # * Loss coefficients
     parser.add_argument('--mask_loss_coef', default=1, type=float)
     parser.add_argument('--dice_loss_coef', default=1, type=float)
@@ -147,6 +145,4 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('CARPE training and evaluation script', parents=[get_args_parser()])
     args = parser.parse_args()
-    if args.inference_out_folder:
-        Path(args.inference_out_folder).mkdir(parents=True, exist_ok=True)
     main(args)

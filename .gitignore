@@ -7,6 +7,7 @@ val2017/*
 carpe_data/*
 runs/*
 out_images/*
+out/*
 snapshots/*
 
 # C extensions

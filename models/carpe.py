@@ -246,7 +246,7 @@ class PostProcess(nn.Module):
 				score, category = s.topk(1)
 				score = score.item()
 				category = category.item() + 1
-				if category == out_logits.shape(-1) or score < threshold:
+				if category == out_logits.shape[-1] or score < threshold:
 					continue
 				nbr_keypoints = 0
 				keypoints = [0.] * self.num_keypoints * 3
