@@ -49,9 +49,9 @@ class CARPE(nn.Module):
 			   - samples.mask: a binary mask of shape [batch_size x H x W], containing 1 on padded pixels
 
 			It returns a dict with the following elements:
-			   - "pred_logits": the classification logits (including no-object) for all queries.
+			   - "labels": the classification logits (including no-object) for all queries.
 								Shape= [batch_size x num_queries x (num_classes + 1)]
-			   - "pred_boxes": The normalized boxes coordinates for all queries, represented as
+			   - "keypoints": The normalized boxes coordinates for all queries, represented as
 							   (center_x, center_y, height, width). These values are normalized in [0, 1],
 							   relative to the size of each individual image (disregarding possible padding).
 							   See PostProcess for information on how to retrieve the unnormalized bounding box.
@@ -70,19 +70,8 @@ class CARPE(nn.Module):
 		outputs_class = self.class_embed_out(hs)
 		outputs_keypoints = self.pose_embed(hs)	
 
-		out = {'pred_logits': outputs_class[-1], 'pred_keypoints': outputs_keypoints[-1]}
-		if self.aux_loss:
-			out['aux_outputs'] = self._set_aux_loss(outputs_class, outputs_keypoints)
+		out = {'labels': outputs_class[-1], 'keypoints': outputs_keypoints[-1]}
 		return out
-
-	@torch.jit.unused
-	def _set_aux_loss(self, outputs_class, outputs_keypoints):
-		# this is a workaround to make torchscript happy, as torchscript
-		# doesn't support dictionary with non-homogeneous values, such
-		# as a dict having both a Tensor and a list.
-		return [{'pred_logits': a, 'pred_keypoints': b}
-				for a, b in zip(outputs_class[:-1], outputs_keypoints[:-1])]
-
 
 class SetCriterion(nn.Module):
 	""" This class computes the loss for DETR.
@@ -114,49 +103,31 @@ class SetCriterion(nn.Module):
 		self.l_ctr = 0.5
 		self.l_abs = 4
 
-	def loss_labels(self, outputs, targets, indices, num_boxes, log=True):
+	def loss_labels(self, outputs, targets, indices, num_queries, log=True):
 		"""Classification loss (NLL)
 		targets dicts must contain the key "labels" containing a tensor of dim [nb_target_boxes]
 		"""
-		assert 'pred_logits' in outputs
-		src_logits = outputs['pred_logits']
+		assert 'labels' in outputs
+		src_logits = outputs['labels']
 
 		idx = self._get_src_permutation_idx(indices)
-		target_classes_o = torch.cat([t["labels"][J] for t, (_, J) in zip(targets, indices)])
+		target_classes_o = torch.cat([t['labels'][J] for t, (_, J) in zip(targets, indices)])
 		target_classes = torch.full(src_logits.shape[:2], self.num_classes,
 									dtype=torch.int64, device=src_logits.device)
 		target_classes[idx] = target_classes_o
 
 		loss_ce = F.cross_entropy(src_logits.transpose(1, 2), target_classes, self.empty_weight)
-		losses = {'loss_ce': loss_ce}
-
-		if log:
-			# TODO this should probably be a separate loss, not hacked in this one here
-			losses['class_error'] = 100 - accuracy(src_logits[idx], target_classes_o)[0]
+		losses = {'loss_labels': loss_ce}
 		return losses
 
-	@torch.no_grad()
-	def loss_cardinality(self, outputs, targets, indices, num_boxes):
-		""" Compute the cardinality error, ie the absolute error in the number of predicted non-empty boxes
-		This is not really a loss, it is intended for logging purposes only. It doesn't propagate gradients
-		"""
-		pred_logits = outputs['pred_logits']
-		device = pred_logits.device
-		tgt_lengths = torch.as_tensor([len(v["labels"]) for v in targets], device=device)
-		# Count the number of predictions that are NOT "no-object" (which is the last class)
-		card_pred = (pred_logits.argmax(-1) != pred_logits.shape[-1] - 1).sum(1)
-		card_err = F.l1_loss(card_pred.float(), tgt_lengths.float())
-		losses = {'cardinality_error': card_err}
-		return losses
-
-	def loss_boxes(self, outputs, targets, indices, num_boxes):
+	def loss_keypoints(self, outputs, targets, indices, num_queries):
 		"""Compute the losses related to the bounding boxes, the L1 regression loss and the GIoU loss
 		   targets dicts must contain the key "boxes" containing a tensor of dim [nb_target_boxes, 4]
 		   The target boxes are expected in format (center_x, center_y, w, h), normalized by the image size.
 		"""
-		#assert 'pred_boxes' in outputs
+		#assert 'keypoints' in outputs
 		idx = self._get_src_permutation_idx(indices)
-		src_boxes = outputs['pred_keypoints'][idx]
+		src_boxes = outputs['keypoints'][idx]
 
 		C_pred = src_boxes[:, :2]
 		Z_pred = src_boxes[:, 2:2+self.num_keypoints*2]
@@ -181,40 +152,10 @@ class SetCriterion(nn.Module):
 
 		total_keypoints_loss = self.l_deltas * torch.sum(offset_loss) + self.l_vis *  torch.sum(viz_loss) + self.l_ctr *  torch.sum(center_loss) + self.l_abs * torch.sum(abs_loss)
 
-		losses = {}
-		losses['loss_bbox'] = total_keypoints_loss / num_boxes
+		losses = {'loss_keypoints' : total_keypoints_loss / num_queries}
 
 		return losses
-
-	def loss_masks(self, outputs, targets, indices, num_boxes):
-		"""Compute the losses related to the masks: the focal loss and the dice loss.
-		   targets dicts must contain the key "masks" containing a tensor of dim [nb_target_boxes, h, w]
-		"""
-		assert "pred_masks" in outputs
-
-		src_idx = self._get_src_permutation_idx(indices)
-		tgt_idx = self._get_tgt_permutation_idx(indices)
-		src_masks = outputs["pred_masks"]
-		src_masks = src_masks[src_idx]
-		masks = [t["masks"] for t in targets]
-		# TODO use valid to mask invalid areas due to padding in loss
-		target_masks, valid = nested_tensor_from_tensor_list(masks).decompose()
-		target_masks = target_masks.to(src_masks)
-		target_masks = target_masks[tgt_idx]
-
-		# upsample predictions to the target size
-		src_masks = interpolate(src_masks[:, None], size=target_masks.shape[-2:],
-								mode="bilinear", align_corners=False)
-		src_masks = src_masks[:, 0].flatten(1)
-
-		target_masks = target_masks.flatten(1)
-		target_masks = target_masks.view(src_masks.shape)
-		losses = {
-			"loss_mask": sigmoid_focal_loss(src_masks, target_masks, num_boxes),
-			"loss_dice": dice_loss(src_masks, target_masks, num_boxes),
-		}
-		return losses
-
+	
 	def _get_src_permutation_idx(self, indices):
 		# permute predictions following indices
 		batch_idx = torch.cat([torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
@@ -227,15 +168,13 @@ class SetCriterion(nn.Module):
 		tgt_idx = torch.cat([tgt for (_, tgt) in indices])
 		return batch_idx, tgt_idx
 
-	def get_loss(self, loss, outputs, targets, indices, num_boxes, **kwargs):
+	def get_loss(self, loss, outputs, targets, indices, num_queries, **kwargs):
 		loss_map = {
 			'labels': self.loss_labels,
-			'cardinality': self.loss_cardinality,
-			'boxes': self.loss_boxes,
-			'masks': self.loss_masks
+			'keypoints': self.loss_keypoints,
 		}
 		assert loss in loss_map, f'do you really want to compute {loss} loss?'
-		return loss_map[loss](outputs, targets, indices, num_boxes, **kwargs)
+		return loss_map[loss](outputs, targets, indices, num_queries, **kwargs)
 
 	def forward(self, outputs, targets):
 		""" This performs the loss computation.
@@ -247,11 +186,11 @@ class SetCriterion(nn.Module):
 		outputs_without_aux = {k: v for k, v in outputs.items() if k != 'aux_outputs'}
 		
 		# Compute the average number of target boxes accross all nodes, for normalization purposes
-		num_boxes = sum(len(t["labels"]) for t in targets)
-		num_boxes = torch.as_tensor([num_boxes], dtype=torch.float, device=next(iter(outputs.values())).device)
+		num_queries = sum(len(t['labels']) for t in targets)
+		num_queries = torch.as_tensor([num_queries], dtype=torch.float, device=next(iter(outputs.values())).device)
 		if is_dist_avail_and_initialized():
-			torch.distributed.all_reduce(num_boxes)
-		num_boxes = torch.clamp(num_boxes / get_world_size(), min=1).item()
+			torch.distributed.all_reduce(num_queries)
+		num_queries = torch.clamp(num_queries / get_world_size(), min=1).item()
 
 		# Retrieve the matching between the outputs of the last layer and the targets
 		indices = self.matcher(outputs_without_aux, targets)
@@ -259,7 +198,7 @@ class SetCriterion(nn.Module):
 		# Compute all the requested losses
 		losses = {}
 		for loss in self.losses:
-			losses.update(self.get_loss(loss, outputs, targets, indices, num_boxes))
+			losses.update(self.get_loss(loss, outputs, targets, indices, num_queries))
 
 		return losses
 
@@ -278,15 +217,15 @@ class PostProcess(nn.Module):
 						  For evaluation, this must be the original image size (before any data augmentation)
 						  For visualization, this should be the image size after data augment, but before padding
 		"""
-		out_logits, out_keypoints = outputs['pred_logits'], outputs['pred_keypoints']
+		out_logits, out_keypoints = outputs['labels'], outputs['keypoints']
 		threshold = 0.5
 
 		target_sizes = torch.stack([torch.as_tensor([t["orig_size"][1], t["orig_size"][0]], device=t["orig_size"].device) for t in targets], dim=0)
 
-		scores = out_logits.softmax(-1)[:, :, :-1]
+		scores = out_logits.softmax(-1)
 
 		C_pred = out_keypoints[:, :, :2] # shape (bs, N, 2)
-		Z_pred = out_keypoints[:, :, 2:self.num_keypoints*2+2] # shape (bs, N, 2*num_keypoints)
+		Z_pred = out_keypoints[:, :, 2:self.num_keypoints*2+2]  # shape (bs, N, 2*num_keypoints)
 		V_pred = out_keypoints[:, :, self.num_keypoints*2+2:] 	# shape (bs, N, num_keypoints)
 
 		V_pred = torch.repeat_interleave(V_pred, 2, dim=2)
@@ -303,8 +242,11 @@ class PostProcess(nn.Module):
 		
 		results = []
 		for image_id, scores_, positions_ in zip(image_ids, scores, positions):
-			for score, position in zip(scores_, positions_):
-				if score.item() < threshold:
+			for s, position in zip(scores_, positions_):
+				score, category = s.topk(1)
+				score = score.item()
+				category = category.item()
+				if category <= 0 or score < threshold:
 					continue
 				nbr_keypoints = 0
 				keypoints = [0] * self.num_keypoints * 3
@@ -317,12 +259,13 @@ class PostProcess(nn.Module):
 						nbr_keypoints += 1
 						keypoints[i*3:(i+1)*3] = [x.item(), y.item(), 2]
 
+				print(keypoints)
+				raise True
 				results.append(
-					{'image_id': image_id, 'category_id': 1, 'score': score.item(), "nbr_keypoints": nbr_keypoints, "keypoints": list(keypoints)}
+					{'image_id': image_id, 'category_id': category, 'score': score, "nbr_keypoints": nbr_keypoints, "keypoints": list(keypoints)}
 				)
 
 		return  results
-
 
 class MLP(nn.Module):
 	""" Very simple multi-layer perceptron (also called FFN)"""
@@ -366,10 +309,9 @@ def build(args):
 		aux_loss=args.aux_loss,
 	)
 	matcher = build_matcher(args)
-	weight_dict = {'loss_ce': 1, 'loss_bbox': 1}
-	weight_dict['loss_giou'] = args.giou_loss_coef
+	weight_dict = {'loss_labels': args.set_cost_class, 'loss_keypoints': args.set_cost_keypoints}
 
-	losses = ['labels', 'boxes', 'cardinality']
+	losses = ['labels', 'keypoints']
 	criterion = SetCriterion(num_classes, matcher=matcher, weight_dict=weight_dict, num_keypoints=args.num_keypoints,
 							 eos_coef=args.eos_coef, losses=losses)
 	criterion.to(device)

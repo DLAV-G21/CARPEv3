@@ -16,7 +16,7 @@ class HungarianMatcher(nn.Module):
     while the others are un-matched (and thus treated as non-objects).
     """
 
-    def __init__(self, cost_class: float = 1, cost_bbox: float = 1, num_keypoints: int = 17, splited = True):
+    def __init__(self, cost_class: float = 1, num_keypoints: int = 24, splited = True):
         """Creates the matcher
 
         Params:
@@ -27,22 +27,20 @@ class HungarianMatcher(nn.Module):
         self.splited = splited
         self.num_keypoints = num_keypoints
         self.cost_class = cost_class
-        self.cost_bbox = cost_bbox
         self.l_deltas = 0.5
         self.l_vis = 0.2
         self.l_ctr = 0.5
         self.l_abs = 4
-        assert cost_class != 0 or cost_bbox != 0, "all costs cant be 0"
 
     @torch.no_grad()
     def forward(self, outputs, targets):
         if not self.splited:
             return self.forward_(outputs, targets)
         all_indices = []
-        for b in range(outputs['pred_logits'].shape[0]):
+        for b in range(outputs['labels'].shape[0]):
             all_indices.append(self.forward_({
-                'pred_logits':outputs['pred_logits'][b].unsqueeze(0),
-                'pred_keypoints' : outputs['pred_keypoints'][b].unsqueeze(0)
+                'labels':outputs['labels'][b].unsqueeze(0),
+                'keypoints' : outputs['keypoints'][b].unsqueeze(0)
                 },
                 [targets[b]]
             )[0])
@@ -54,8 +52,8 @@ class HungarianMatcher(nn.Module):
 
         Params:
             outputs: This is a dict that contains at least these entries:
-                 "pred_logits": Tensor of dim [batch_size, num_queries, num_classes] with the classification logits
-                 "pred_boxes": Tensor of dim [batch_size, num_queries, 4] with the predicted box coordinates
+                 "labels": Tensor of dim [batch_size, num_queries, num_classes] with the classification logits
+                 "keypoints": Tensor of dim [batch_size, num_queries, 4] with the predicted box coordinates
 
             targets: This is a list of targets (len(targets) = batch_size), where each target is a dict containing:
                  "labels": Tensor of dim [num_target_boxes] (where num_target_boxes is the number of ground-truth
@@ -69,11 +67,11 @@ class HungarianMatcher(nn.Module):
             For each batch element, it holds:
                 len(index_i) = len(index_j) = min(num_queries, num_target_boxes)
         """
-        bs, num_queries = outputs["pred_logits"].shape[:2]
+        bs, num_queries = outputs["labels"].shape[:2]
 
         # We flatten to compute the cost matrices in a batch
-        out_prob = outputs["pred_logits"].flatten(0, 1).softmax(-1)  # [batch_size * num_queries, num_classes]
-        out_keypoints = outputs["pred_keypoints"].flatten(0, 1)  # [batch_size * num_queries, (3 * 17) + 1]
+        out_prob = outputs["labels"].flatten(0, 1).softmax(-1)  # [batch_size * num_queries, num_classes]
+        out_keypoints = outputs["keypoints"].flatten(0, 1)  # [batch_size * num_queries, (3 * 17) + 1]
 
         C_pred = out_keypoints[:, :2]
         Z_pred = out_keypoints[:, 2:2+self.num_keypoints*2]
@@ -87,7 +85,7 @@ class HungarianMatcher(nn.Module):
         C_gt = tgt_keypoints[:, :2]
         Z_gt = tgt_keypoints[:, 2:2+self.num_keypoints*2]
         V_gt = tgt_keypoints[:, 2+self.num_keypoints*2:]
-
+        
         C_gt_expand = torch.repeat_interleave(C_gt.unsqueeze(1), self.num_keypoints, dim=1).view(-1,self.num_keypoints*2)
         A_gt = C_gt_expand + Z_gt
 
@@ -101,14 +99,16 @@ class HungarianMatcher(nn.Module):
         cost_class = -out_prob[:, tgt_ids]
 
         Vgt_ = torch.repeat_interleave(V_gt , 2, dim=1)
-        offset_loss = [torch.cdist(Z_pred * v_gt_single.unsqueeze(0), z_gt_single.unsqueeze(0) * v_gt_single.unsqueeze(0), p=1) for v_gt_single, z_gt_single in zip(Vgt_, Z_gt)] 
-        offset_loss = torch.cat(offset_loss, dim=1)
+        offset_loss = torch.cat([torch.cdist(Z_pred * v_gt_single.unsqueeze(0), z_gt_single.unsqueeze(0) * v_gt_single.unsqueeze(0), p=1) for v_gt_single, z_gt_single in zip(Vgt_, Z_gt)], dim=1)
         viz_loss  =  torch.cdist(V_pred, V_gt, p=2).square()
         center_loss =  torch.cdist(C_pred ,C_gt, p=2).square()
-        abs_loss = [torch.cdist(A_pred * v_gt_single.unsqueeze(0), a_gt_single.unsqueeze(0) * v_gt_single.unsqueeze(0), p=1) for v_gt_single, a_gt_single in zip(Vgt_, A_gt)] 
-        abs_loss = torch.cat(abs_loss, dim=1)
+        abs_loss = torch.cat([torch.cdist(A_pred * v_gt_single.unsqueeze(0), a_gt_single.unsqueeze(0) * v_gt_single.unsqueeze(0), p=1) for v_gt_single, a_gt_single in zip(Vgt_, A_gt)],  dim=1)
 
-        C =  self.cost_class * cost_class +  self.l_deltas * offset_loss + self.l_vis * viz_loss + self.l_ctr * center_loss + self.l_abs * abs_loss
+        C = self.cost_class * cost_class +\
+            self.l_deltas * offset_loss +\
+            self.l_vis * viz_loss +\
+            self.l_ctr * center_loss +\
+            self.l_abs * abs_loss
         C = C.view(bs, num_queries, -1).cpu()
 
         sizes = [len(v["keypoints"]) for v in targets]
@@ -117,4 +117,4 @@ class HungarianMatcher(nn.Module):
 
 
 def build_matcher(args):
-    return HungarianMatcher(cost_class=args.set_cost_class, cost_bbox=args.set_cost_bbox, num_keypoints=args.num_keypoints)
+    return HungarianMatcher(cost_class=args.set_cost_class, num_keypoints=args.num_keypoints)

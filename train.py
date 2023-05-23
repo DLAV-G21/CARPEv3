@@ -26,6 +26,8 @@ def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
     parser.add_argument("training_name",type=str)
     parser.add_argument("--pretrained_weight_path",type=str)
+    parser.add_argument("-j", "--json",type=str,help="Path to the json output file")
+    parser.add_argument("-v","--visualize_folder",type=str, help="The folder in which we should store the output images")
 
     parser.add_argument('--lr', default=1e-4, type=float)
     parser.add_argument('--lr_backbone', default=1e-5, type=float)
@@ -74,10 +76,8 @@ def get_args_parser():
     # * Matcher
     parser.add_argument('--set_cost_class', default=10, type=float,
                         help="Class coefficient in the matching cost")
-    parser.add_argument('--set_cost_bbox', default=5, type=float,
-                        help="L1 box coefficient in the matching cost")
-    parser.add_argument('--set_cost_giou', default=2, type=float,
-                        help="giou box coefficient in the matching cost")
+    parser.add_argument('--set_cost_keypoints', default=1, type=float,
+                        help="L1 keypoints coefficient in the matching cost")
     # * Loss coefficients
     parser.add_argument('--mask_loss_coef', default=1, type=float)
     parser.add_argument('--dice_loss_coef', default=1, type=float)
@@ -208,9 +208,13 @@ def main(args):
     model.to(device)
 
     if args.eval:
-        coco_evaluator = evaluate(model, criterion, postprocessors,
-                                  data_loader_val, get_coco_api_from_dataset(dataset_val), 
-                                  device, args.output_dir,num_keypoints=args.num_keypoints)
+        coco_evaluator = evaluate(
+            model, criterion, postprocessors,
+            data_loader_val,
+            get_coco_api_from_dataset(dataset_val), 
+            device,num_keypoints=args.num_keypoints,
+            visualize_folder=args.visualize_folder
+        )
         return
 
     log.info("Start training...")
@@ -219,8 +223,14 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         log.info(f"Starting training step for epoch {epoch}...")
         train_one_epoch(
-            model, criterion, data_loader_train, optimizer, device, epoch,
-            args.clip_max_norm,logger=writer)
+            model, criterion, 
+            data_loader_train,
+            optimizer, device, epoch,
+            args.clip_max_norm, logger=writer,
+            postprocessors=postprocessors,
+            num_keypoints=args.num_keypoints,
+            visualize_folder=args.visualize_folder,
+            )
 
         lr_scheduler.step()
         
@@ -238,10 +248,13 @@ def main(args):
                 'args': args,
             }, checkpoint_path)
 
-        base_ds = get_coco_api_from_dataset(dataset_val)
         log.info(f"Starting evaluation step for epoch {epoch}...")
         coco_evaluator = evaluate(
-            model, criterion, postprocessors, data_loader_val, base_ds, device, args.output_dir, logger=writer, epoch=epoch,num_keypoints=args.num_keypoints
+            model, criterion, postprocessors,
+            data_loader_val,
+            get_coco_api_from_dataset(dataset_val), 
+            device, num_keypoints=args.num_keypoints,
+            visualize_folder=args.visualize_folder,
         )
 
         if coco_evaluator is not None:

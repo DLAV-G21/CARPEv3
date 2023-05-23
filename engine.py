@@ -15,7 +15,8 @@ from util.openpifpaf_helper import *
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
-                    device: torch.device, epoch: int, max_norm: float = 0, logger = None):
+                    device: torch.device, epoch: int, max_norm: float = 0, logger = None,
+                    postprocessors = None, num_keypoints=24, visualize_folder=None):
     model.train()
     criterion.train()
     len_dl = len(data_loader)
@@ -23,7 +24,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     pbar.set_description(f"Epoch {epoch}, loss = init")
     for i, (samples, targets) in enumerate(pbar):
         samples = samples.to(device)
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        targets =  [{k: v.to(device) if (v is not None) and (k not in ["image", "filename"]) else v for k, v in t.items()} for t in targets ]
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
@@ -41,9 +42,33 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
         optimizer.step()
 
+        if visualize_folder is not None:
+            #results = postprocessors['keypoints'](outputs, targets)
+            #TODO REMOVE THIS
+            num_quary = 50
+            targets_ = {
+                'keypoints' : torch.cat([
+                   torch.cat((t['keypoints'], -torch.ones((num_quary -t['keypoints'].shape[0],t['keypoints'].shape[1]), device=device)), dim=0).unsqueeze(0)
+                   for t in targets], dim=0),
+                'labels' : torch.cat([
+                    torch.cat([
+                        torch.cat([torch.zeros((          t['keypoints'].shape[0], 1), device=device), torch.ones((            t['keypoints'].shape[0], 1), device=device)], dim=1),
+                        torch.cat([torch.ones((num_quary -t['keypoints'].shape[0], 1), device=device), torch.zeros((num_quary -t['keypoints'].shape[0], 1), device=device)], dim=1)
+                    ], dim=0).unsqueeze(0)
+                    for t in targets], dim=0),
+            }
+            results = postprocessors['keypoints'](targets_, targets)
+
+            if not os.path.exists(visualize_folder):
+                os.makedirs(visualize_folder)
+            for target in targets:
+                filt =[out for out in results if out["image_id"] == target["image_id"]]
+                plot_and_save_keypoints_inference(target["image"], target["filename"], filt, visualize_folder, num_keypoints)
+            raise ValueError("STOP") 
+
 
 @torch.no_grad()
-def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, output_dir, epoch=0, logger=None,num_keypoints=24,visualize_keypoints=False,out_folder=""):
+def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epoch=0, logger=None,num_keypoints=24,visualize_folder=None):
     model.eval()
     if criterion is not None:
         criterion.eval()
@@ -81,10 +106,12 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
         if coco_evaluator is not None:
             coco_evaluator.update_keypoints(results)
 
-        if visualize_keypoints:
+        if visualize_folder is not None:
+            if not os.path.exists(visualize_folder):
+                os.makedirs(visualize_folder)
             for target in targets:
                 filt =[out for out in results if out["image_id"] == target["image_id"]]
-                plot_and_save_keypoints_inference(target["image"], target["filename"], filt, out_folder, num_keypoints)
+                plot_and_save_keypoints_inference(target["image"], target["filename"], filt, visualize_folder, num_keypoints)
 
 
     if (coco_evaluator is not None) and (len(coco_evaluator.keypoint_predictions) > 0):

@@ -23,9 +23,8 @@ def get_args_parser():
     parser.add_argument("pretrained_weight_path",type=str)
     parser.add_argument("image",type=str)
     parser.add_argument('--coco_file_path', type=str)
-    parser.add_argument("-j",help="If we should write json output to disk",action="store_true")
-    parser.add_argument("-v","--viz", help="If we should display keypoints on images",action="store_true")
-    parser.add_argument("--inference_out_folder",type=str, help="The folder in which we should store the output")
+    parser.add_argument("-j", "--json",type=str,help="Path to the json output file")
+    parser.add_argument("-v","--visualize_folder",type=str, help="The folder in which we should store the output images")
 
     parser.add_argument('--lr', default=1e-4, type=float)
     parser.add_argument('--lr_backbone', default=1e-5, type=float)
@@ -120,9 +119,6 @@ def main(args):
     data_loader_val = DataLoader(dataset_val, args.batch_size, sampler=sampler_val,
                                  drop_last=False, collate_fn=utils.collate_fn, num_workers=args.num_workers)
 
-    if not os.path.exists(args.inference_out_folder):
-        os.makedirs(args.inference_out_folder)
-
     if os.path.exists(args.pretrained_weight_path):
         log.info("Loading pretrained weights from "+args.pretrained_weight_path)
         pretrained_state = torch.load(args.pretrained_weight_path)["model"]
@@ -138,20 +134,14 @@ def main(args):
         raise ValueError("The given weight path doesn't exist")
 
     model.to(device)
-    base_ds = None
-    if args.coco_file_path is not None:
-        base_ds = get_coco_api_from_dataset(dataset_val)
 
-    coco_evaluator = evaluate(model, 
-                            criterion if args.coco_file_path is not None else None, 
-                            postprocessors,
-                            data_loader_val,
-                            base_ds,
-                            device,
-                            args.inference_out_folder,
-                            num_keypoints=args.num_keypoints,
-                            visualize_keypoints=args.viz,
-                            out_folder=args.inference_out_folder)
+    coco_evaluator = evaluate(
+        model, criterion if args.coco_file_path is not None else None, postprocessors,
+        data_loader_val,
+        get_coco_api_from_dataset(dataset_val) if args.coco_file_path is not None else None,
+        device, num_keypoints=args.num_keypoints,
+        visualize_folder=args.visualize_folder,
+    )
 
 
 if __name__ == '__main__':
