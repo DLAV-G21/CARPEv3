@@ -228,14 +228,14 @@ class PostProcess(nn.Module):
 		Z_pred = out_keypoints[:, :, 2:self.num_keypoints*2+2]  # shape (bs, N, 2*num_keypoints)
 		V_pred = out_keypoints[:, :, self.num_keypoints*2+2:] 	# shape (bs, N, num_keypoints)
 
+		target_sizes = target_sizes.expand(Z_pred.shape[1], Z_pred.shape[2]//target_sizes.shape[1], *target_sizes.shape)\
+			.permute(2,0,1,3).reshape(Z_pred.shape)
+		
 		V_pred = torch.repeat_interleave(V_pred, 2, dim=2)
-		C_pred_expand = torch.repeat_interleave(C_pred, self.num_keypoints, dim=2)
-		A_pred = C_pred_expand + Z_pred # torch.size([num_persons, 2*num_keypoints])
+		C_pred_expand = C_pred.expand(self.num_keypoints, *C_pred.shape).permute(1,2,0,3).reshape(Z_pred.shape) * target_sizes
+		A_pred = Z_pred * target_sizes
 
-		target_sizes = target_sizes.expand(A_pred.shape[1], A_pred.shape[2]//target_sizes.shape[1], *target_sizes.shape)\
-			.permute(2,0,1,3).reshape(A_pred.shape)
-
-		positions = A_pred * target_sizes
+		positions = C_pred_expand + A_pred
 		positions[V_pred < threshold] = -1
 
 		image_ids = torch.stack([t["image_id"] for t in targets], dim=0).squeeze(1).cpu().numpy()
@@ -245,26 +245,20 @@ class PostProcess(nn.Module):
 			for s, position in zip(scores_, positions_):
 				score, category = s.topk(1)
 				score = score.item()
-				category = category.item()
-				if category <= 0 or score < threshold:
+				category = category.item() + 1
+				if category == out_logits.shape(-1) or score < threshold:
 					continue
 				nbr_keypoints = 0
-				keypoints = [0] * self.num_keypoints * 3
+				keypoints = [0.] * self.num_keypoints * 3
 
 				for i in range(self.num_keypoints):
 					x, y = position[i*2:(i+1)*2]
-					if x < 0 or y < 0:
-						keypoints[i*3:(i+1)*3] = [0, 0, 0]
-					else:
+					if x >= 0 and y >= 0:
 						nbr_keypoints += 1
 						keypoints[i*3:(i+1)*3] = [x.item(), y.item(), 2]
-
-				print(keypoints)
-				raise True
 				results.append(
 					{'image_id': image_id, 'category_id': category, 'score': score, "nbr_keypoints": nbr_keypoints, "keypoints": list(keypoints)}
 				)
-
 		return  results
 
 class MLP(nn.Module):

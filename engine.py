@@ -43,28 +43,12 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         optimizer.step()
 
         if visualize_folder is not None:
-            #results = postprocessors['keypoints'](outputs, targets)
-            #TODO REMOVE THIS
-            num_quary = 50
-            targets_ = {
-                'keypoints' : torch.cat([
-                   torch.cat((t['keypoints'], -torch.ones((num_quary -t['keypoints'].shape[0],t['keypoints'].shape[1]), device=device)), dim=0).unsqueeze(0)
-                   for t in targets], dim=0),
-                'labels' : torch.cat([
-                    torch.cat([
-                        torch.cat([torch.zeros((          t['keypoints'].shape[0], 1), device=device), torch.ones((            t['keypoints'].shape[0], 1), device=device)], dim=1),
-                        torch.cat([torch.ones((num_quary -t['keypoints'].shape[0], 1), device=device), torch.zeros((num_quary -t['keypoints'].shape[0], 1), device=device)], dim=1)
-                    ], dim=0).unsqueeze(0)
-                    for t in targets], dim=0),
-            }
-            results = postprocessors['keypoints'](targets_, targets)
-
+            results = postprocessors['keypoints'](outputs, targets)
             if not os.path.exists(visualize_folder):
                 os.makedirs(visualize_folder)
             for target in targets:
                 filt =[out for out in results if out["image_id"] == target["image_id"]]
                 plot_and_save_keypoints_inference(target["image"], target["filename"], filt, visualize_folder, num_keypoints)
-            raise ValueError("STOP") 
 
 
 @torch.no_grad()

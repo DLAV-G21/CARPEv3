@@ -47,6 +47,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         target['image'] = img_copy
         target['filename'] = self.coco.loadImgs(image_id)[0]['file_name']
         
+        target['labels'] -= 1
         return img, target
 
 

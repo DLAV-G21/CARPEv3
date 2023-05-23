@@ -117,7 +117,7 @@ def get_args_parser():
     parser.add_argument("--apply_occlusion_augmentation", action="store_true",
                         help="If we should apply the occlusion augmentation")
     #TONOTDO: change the default to not tuple
-    parser.add_argument("--input_image_resize", default=(480,640), type=tuple)
+    parser.add_argument("--input_image_resize", default=(640,480), type=tuple)
 
     parser.add_argument('--pretrained_detr',  help='resume from pretrained detr', action="store_true")
     parser.add_argument("--pretrained_keypoints",  help='resume from pretrained keypoints detector', action="store_true")
