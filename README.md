@@ -9,18 +9,41 @@ Starting from OpenPifPaf, we had 2 main ideas:
 1. Move to a full-transformer architecture to give an image and output the keypoints as scalar values and the class as a single integer.  
 2. Make use of Data Augmentation specifically design to hide part of cars to help the network to be robust to occlusion. 
 
-Unfortunately, our journey was more complicated that it seems. 
-Our first idea was to start from an architecture common to the other groups (using the HRFormer transformer), then our transformer heads should learn to predict the classes of each datapoint as well as their position. After coding everything from scratch (code available [here]()), we saw that the network wasn't learning anything at all. After having spent a lot of time trying to debug, we arrived to the conclusion that since a lot of different part of the code have been coded by ourselves, there is too much places where we could have been wrong and therefore it would be too hard to debug. The original idea was this one: 
+### Model design 
 
-e.g. The HRFormer backbone would extract all the interesant features from the image and the keypoint / links queries should enter the decoder architecture in order to gives a keypoint class and positions (or two positions in the case of links). The skeleton will be merged together using a decoder (available in the decoder final in the linked repository). Unfortunately, as said before, the network wasn't learning anything at all and due to all the different parts implemented by ourselves, we didn't really where to find our mistakes. 
 
-After a meeting with the TA, we went to the conclusion that it will be too hard to debug and that we should start from a more complete codebase and modify the minimal amount of code. We started from the DETR models and specifically, we build a code that was similar to the one in the PE-Former model. Unfortunately, even though the results were better, i.e. the learning was actually learning something and the points were dispersed and not all at the same place, we saw that this technique is useful only if we want to find single instances of car/person in an image but not multiple. In PE-Former, they use 100 queries to find at most 17 keypoints. With images with more than 10 images the number of queries we should made will be too high. 
+However, our journey proved more challenging than anticipated. Initially, we planned to use the HRFormer transformer as the common backbone model, assuming it was mandatory based on the project requirements. The transformer heads were intended to predict the classes and positions of each keypoint (24 classes + 1 no-keypoint class). We implemented the entire codebase from scratch, which can be found [here](https://github.com/DLAV-G21/CARPEvRIP). Unfortunately, we encountered a significant issue where the network failed to learn anything. Despite investing substantial time in debugging, we realized that since we had implemented multiple components ourselves (model, decoder, training loop, dataset, etc.), identifying the specific source of the problem became exceedingly difficult.
 
-This leads to the third attempts in this project where we found the following paper which is written by EPFL collaborators. They did what we were interested in i.e. multi-instance keypoint detection end-to-end with transformer. The idea here is different from the other one. Instead of issuing a query for each kkeypoint and then merge the keypoints belonging to the same skeleton together, we do the following: 
-- Each query corresponds to one instance in the image 
-- Each query will generate a 2 (if the car is visible or not) + 2 (car center) +  24\*3 (for each keypoint, we predict the offset from the center point and also if the point is visible or not)
-- The network is trained with 4 different losses (which you can find more detailed in the original paper) 
-This approach was more intuitive and seems more robust.
+The original idea was as follows:
+
+1. The HRFormer backbone would extract relevant features from the input image.
+2. Queries for keypoints and links would be passed to the decoder. Each query would generate a 27-dimensional vector for keypoints or a 54-dimensional vector for links, including:
+	- Keypoints:
+		- (x, y) position
+		- A distribution over 25 classes (24 keypoint classes and 1 no-keypoint class)
+	- Links:
+		- Two sets of (x, y) positions for the link endpoints
+		- A distribution over 50 classes (49 keypoint classes and 1 no-keypoint class)
+3. A greedy decoder would be employed to associate keypoints and links belonging together, resulting in the generation of final skeletons. This decoding process would resemble OpenPifPaf but without the need for Non-Maximum Suppression (NMS), as our approach relied on scalar values rather than heatmaps. 
+
+Unfortunately, due to the aforementioned learning issue and the complexity of the self-implemented components, pinpointing the root cause of the problem proved challenging. veloping the entire codebase took a considerable amount of time, until May 12th. Subsequently, we dedicated one week to resolving the bug, but unfortunately, we were unable to obtain a working solution.
+
+ollowing a meeting with our TA on May 19th, we concluded that debugging the existing codebase would be too challenging. We decided to start from a more comprehensive codebase and minimize modifications. Additionally, we were informed that using HRFormer was not mandatory. Thus, we switched to the [DETR](https://ai.facebook.com/research/publications/end-to-end-object-detection-with-transformers) ([Github](https://github.com/facebookresearch/detr)) models as our starting point and built upon the existing codebase for keypoint detection. Our modifications were based on the [PE-Former]()https://github.com/padeler/PE-former) repository, customized to our specific problem. Instead of using specific models as presented in the [PE-Former paper](https://arxiv.org/pdf/2112.04981.pdf), we focused solely on the VisionTransformer. While the results were improved compared to our previous attempts, we observed that this technique was not really effective for predicting multiple instances in one image. In PE-Former, they utilized 100 queries to find a maximum of 17 keypoints. With more than 10 cars per image, each potentially having 24 keypoints and 49 links, the number of queries for keypoints would become impractical, not to mention the links. Our adapted codebase can be found [here](). 
+
+
+ and we build upon that codebase to have a codebase for keypoint detection (related to  but adapted to our problem and with only the VisionTransformer and not specific model as they did in [their paper]. Even though the results were better, i.e. the learning was actually learning something and the points were dispersed and not all at the same place, we saw that this technique was really effective if we want to predict a single instance of car/person in an image and not multilple (as explained in the [PE-Former paper](https://arxiv.org/pdf/2112.04981.pdf)). In PE-Former, they use 100 queries to find at most 17 keypoints. With more than 10 cars per image which can have at most 24 keypoints and 49 links, the number of queries for keypoints will be too high and we don't talk about the links. Our adapated codebase can be found(here)[https://github.com/DLAV-G21/CARPEv2].
+
+At this point, we were thinking of the most effective way to translate our multi-instance pose estimation problem with transformers.We considered using input queries for each skeleton in an image to eliminate the need for a specific greedy decoder and reduce the required number of queries. At this point, we cross the road of the [End-to-End Trainable Multi-Instance Pose Estimation with Transformers](https://arxiv.org/pdf/2103.12115.pdf) paper authored by EPFL researchers, which aligned with our thinking. The proposed approach involves issuing a query for each skeleton instance in the image, resulting in the generation of a 76-dimensional vector per query. Specifically:
+
+1. Each query corresponds to one instance car/person in the image 
+2. Each query will generate a 76 dimensional vector.
+- 2 values indicating visibility (0 if the car is visible, 1 if it is not)
+- 2 values indicating the car's center position
+- 24\*3 values for each keypoint, representing the offset from the center point and whether the point is visible or not
+3. The network is trained with 4 different losses (for which you can find more details in [the original paper]((https://arxiv.org/pdf/2103.12115.pdf))) 
+
+
+Our final repository, which you are currently viewing, is a forked and modified version of the [original repository](https://github.com/pranoyr/End-to-End-Trainable-Multi-Instance-Pose-Estimation-with-Transformers) We tailored it to work with cars and implemented additional enhancements for better visualizations. This approach proved more intuitive and yielded some positive results over the training set.
 
 ### Repository structure
 This is the file and folder structure of the github repository.
