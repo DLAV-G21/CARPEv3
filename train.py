@@ -244,7 +244,7 @@ def main(args):
                 'args': args,
             }, checkpoint_path)
 
-        if epoch > 2:
+        if epoch >= 2:
             to_remove = [output_dir / f'checkpoint{(epoch-2):04}.pth']
             for rm in to_remove:
                 if os.path.isfile(rm):
