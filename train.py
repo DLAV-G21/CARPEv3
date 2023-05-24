@@ -116,8 +116,8 @@ def get_args_parser():
                         help="If we apply the data augmentation")
     parser.add_argument("--apply_occlusion_augmentation", action="store_true",
                         help="If we should apply the occlusion augmentation")
-    #TONOTDO: change the default to not tuple
-    parser.add_argument("--input_image_resize", default=(640,480), type=tuple)
+    
+    parser.add_argument("--eval_n_epochs", default=10, type=int)
 
     parser.add_argument('--pretrained_detr',  help='resume from pretrained detr', action="store_true")
 
@@ -250,27 +250,30 @@ def main(args):
                 if os.path.isfile(rm):
                     os.remove(rm)
 
-        log.info(f"Starting evaluation step for epoch {epoch}...")
-        coco_evaluator = evaluate(
-            model, criterion, postprocessors,
-            data_loader_val,
-            get_coco_api_from_dataset(dataset_val), 
-            device, num_keypoints=args.num_keypoints,
-            visualize_folder=args.visualize_folder,
-        )
+        if (epoch % args.eval_n_epochs) == 0:
 
-        if coco_evaluator is not None:
-            AP = coco_evaluator.coco_eval['keypoints'].stats.tolist()[0]
-            if(AP >= best_AP):
-                best_AP = AP
-                log.info("Saving best model...")
-                torch.save({
-                    'model': model.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                    'lr_scheduler': lr_scheduler.state_dict(),
-                    'epoch': epoch,
-                    'args': args,
-                }, output_dir / f'best_model.pth')
+            log.info(f"Starting evaluation step for epoch {epoch}...")
+
+            coco_evaluator = evaluate(
+                model, criterion, postprocessors,
+                data_loader_val,
+                get_coco_api_from_dataset(dataset_val), 
+                device, num_keypoints=args.num_keypoints,
+                visualize_folder=args.visualize_folder,
+            )
+
+            if coco_evaluator is not None:
+                AP = coco_evaluator.coco_eval['keypoints'].stats.tolist()[0]
+                if(AP >= best_AP):
+                    best_AP = AP
+                    log.info("Saving best model...")
+                    torch.save({
+                        'model': model.state_dict(),
+                        'optimizer': optimizer.state_dict(),
+                        'lr_scheduler': lr_scheduler.state_dict(),
+                        'epoch': epoch,
+                        'args': args,
+                    }, output_dir / f'best_model.pth')
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))

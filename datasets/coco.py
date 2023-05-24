@@ -176,11 +176,11 @@ def albumentations_transform(image_set):
         al.ColorJitter(0.4, 0.4, 0.5, 0.2, p=0.6),
         al.RandomBrightnessContrast(p=0.5),
         al.ToGray(p=0.01),
-        al.FancyPCA(p=0.3),
+        al.FancyPCA(p=0.2),
         al.ImageCompression(50, 80,p=0.1),
         al.RandomSunFlare(p=0.05),
         al.Solarize(p=0.05),
-        al.GaussNoise(var_limit=(1.0,30.0), p=0.2)
+        al.GaussNoise(var_limit=(1.0,30.0), p=0.1),
       ])
     elif image_set == "val":
         return None

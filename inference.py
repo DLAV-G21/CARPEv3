@@ -36,6 +36,9 @@ def get_args_parser():
                         help='gradient clipping max norm')
 
 
+    # Model parameters
+    parser.add_argument('--frozen_weights', type=str, default=None,
+                        help="Path to the pretrained model. If set, only the mask head will be trained")
     # * Backbone
     parser.add_argument('--backbone', default='resnet50', type=str,
                         help="Name of the convolutional backbone to use")
@@ -43,6 +46,7 @@ def get_args_parser():
                         help="If true, we replace stride with dilation in the last convolutional block (DC5)")
     parser.add_argument('--position_embedding', default='sine', type=str, choices=('sine', 'learned'),
                         help="Type of positional embedding to use on top of the image features")
+
 
     # * Transformer
     parser.add_argument('--enc_layers', default=6, type=int,
@@ -57,7 +61,7 @@ def get_args_parser():
                         help="Dropout applied in the transformer")
     parser.add_argument('--nheads', default=8, type=int,
                         help="Number of attention heads inside the transformer's attentions")
-    parser.add_argument('--num_queries', default=25, type=int,
+    parser.add_argument('--num_queries', default=50, type=int,
                         help="Number of query slots")
     parser.add_argument('--pre_norm', action='store_true')
 
@@ -108,7 +112,7 @@ def main(args):
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     log.info(f'Number of trainable parameters {n_parameters}' )
 
-    dataset_val = CocoDetection(args.image_folder, args.coco_file_path, make_coco_transforms("val",args.input_image_resize,False), None, None, None, None, "val")\
+    dataset_val = CocoDetection(args.image, args.coco_file_path, make_coco_transforms("test"), None, None, None, None, "test")\
          if args.coco_file_path is not None else \
          build_inference(args)
 

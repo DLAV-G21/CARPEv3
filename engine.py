@@ -113,7 +113,25 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epo
                 os.makedirs(visualize_folder)
             for target in targets:
                 filt =[out for out in results if out["image_id"] == target["image_id"]]
-                plot_and_save_keypoints_inference(target["image"], target["filename"], filt, visualize_folder, num_keypoints)
+                plot_and_save_keypoints_inference(target["image"], f"output_{target['filename']}", filt, visualize_folder, num_keypoints)
+                
+            if(all('keypoints' in t for t in targets)):
+                num_quary = max([t['keypoints'].shape[0] for t in targets]) + 1
+                targets_ = {
+                    'keypoints' : torch.cat([
+                    torch.cat((t['keypoints'], -torch.ones((num_quary -t['keypoints'].shape[0],t['keypoints'].shape[1]), device=device)), dim=0).unsqueeze(0)
+                    for t in targets], dim=0),
+                    'labels' : torch.cat([
+                        torch.cat([
+                            torch.cat([torch.ones ((           t['keypoints'].shape[0], 1), device=device), torch.zeros((           t['keypoints'].shape[0], 1), device=device)], dim=1),
+                            torch.cat([torch.zeros((num_quary -t['keypoints'].shape[0], 1), device=device), torch.ones ((num_quary -t['keypoints'].shape[0], 1), device=device)], dim=1)
+                        ], dim=0).unsqueeze(0)
+                        for t in targets], dim=0),
+                }
+                results = postprocessors['keypoints'](targets_, targets)
+                for target in targets:
+                    filt =[out for out in results if out['image_id'] == target['image_id']]
+                    plot_and_save_keypoints_inference(target['image'], f"target_{target['filename']}", filt, visualize_folder, num_keypoints)
 
 
     if (coco_evaluator is not None) and (len(coco_evaluator.keypoint_predictions) > 0):
