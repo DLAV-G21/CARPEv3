@@ -33,6 +33,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         img, target = super(CocoDetection, self).__getitem__(idx)
         image_id = self.ids[idx]
         img_copy = np.array(img.copy())
+        img = np.array(img)
         target = { 'image_id': image_id, 'annotations': target }
 
         if self.apply_occlusion_augmentation:
@@ -41,7 +42,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
             img = self.al_transforms(image=img)["image"]
 
         img, target = self.prepare(img, target)
-        
+
         if self._transforms is not None:
             img, target = self._transforms(img, target)
 
@@ -128,7 +129,6 @@ class ConvertCocoPolysToMask(object):
         target["size"] = torch.as_tensor([int(h), int(w)])
 
         del target['boxes']
-        
         
         return image, target
 
