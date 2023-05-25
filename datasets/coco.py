@@ -35,12 +35,14 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         img_copy = np.array(img.copy())
         target = { 'image_id': image_id, 'annotations': target }
 
+        img, target = self.prepare(img, target)
+        
         if self.apply_occlusion_augmentation:
             pass
-        if self.al_transforms is not None and self.apply_augm: 
-            img = self.al_transforms(image=np.array(img))["image"]
-
-        img, target = self.prepare(np.array(img), target)
+        if self.al_transforms is not None and self.apply_augm:
+            img = np.array(img)
+            img = self.al_transforms(image=img)["image"]
+            img = Image.fromarray(np.uint8(img))
 
         if self._transforms is not None:
             img, target = self._transforms(img, target)
@@ -75,7 +77,6 @@ class ConvertCocoPolysToMask(object):
 
     def __call__(self, image, target):
         w, h = image.size
-
 
         img_array = np.array(image)
         if len(img_array.shape) == 2:
