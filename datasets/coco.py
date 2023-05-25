@@ -136,8 +136,6 @@ class ConvertCocoPolysToMask(object):
         
         return image, target
 
-
-
 def make_coco_transforms(image_set):
 
     normalize = T.Compose([
@@ -167,7 +165,7 @@ def make_coco_transforms(image_set):
 
     if image_set == 'val'or image_set =="test":
         return (T.Compose([
-            T.RandomResize([val_scale], max_size=1333),
+            T.RandomResize(val_scale, max_size=1333),
         ]), normalize)
 
     raise ValueError(f'unknown {image_set}')
