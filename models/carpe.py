@@ -255,8 +255,12 @@ class PostProcess(nn.Module):
 					if x >= 0 and y >= 0:
 						nbr_keypoints += 1
 						keypoints[i*3:(i+1)*3] = [x.item(), y.item(), 2]
-				results.append(
-					{'image_id': image_id, 'category_id': category, 'score': score, "nbr_keypoints": nbr_keypoints, "keypoints": list(keypoints)}
+				results.append({
+					'image_id': int(image_id),
+					'category_id': int(category),
+					'score': float(score),
+					'nbr_keypoints': int(nbr_keypoints),
+					'keypoints': list(keypoints)}
 				)
 		return  results
 

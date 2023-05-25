@@ -26,7 +26,7 @@ def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
     parser.add_argument("training_name",type=str)
     parser.add_argument("--pretrained_weight_path",type=str,default="")
-    parser.add_argument("-j", "--json",type=str,help="Path to the json output file")
+    parser.add_argument("-j", "--json_file",type=str,help="Path to the json output file")
     parser.add_argument("-v","--visualize_folder",type=str, help="The folder in which we should store the output images")
 
     parser.add_argument('--lr', default=1e-4, type=float)
@@ -179,7 +179,6 @@ def main(args):
     os.makedirs(output_dir)
     output_dir = Path(output_dir)
 
-    
     if args.pretrained_detr:
         model_ckpt = torch.hub.load('facebookresearch/detr:main', 'detr_resnet50', pretrained=True)
         model_state = model.state_dict()
@@ -229,6 +228,7 @@ def main(args):
             postprocessors=postprocessors,
             num_keypoints=args.num_keypoints,
             visualize_folder=args.visualize_folder,
+            json_file=args.json_file,
             )
 
         lr_scheduler.step()
@@ -260,6 +260,7 @@ def main(args):
                 get_coco_api_from_dataset(dataset_val), 
                 device, num_keypoints=args.num_keypoints,
                 visualize_folder=args.visualize_folder,
+                json_file=args.json_file,
             )
 
             if coco_evaluator is not None:

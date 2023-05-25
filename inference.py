@@ -23,7 +23,7 @@ def get_args_parser():
     parser.add_argument("pretrained_weight_path",type=str)
     parser.add_argument("image",type=str)
     parser.add_argument('--coco_file_path', type=str)
-    parser.add_argument("-j", "--json",type=str,help="Path to the json output file")
+    parser.add_argument("-j", "--json_file",type=str,help="Path to the json output file")
     parser.add_argument("-v","--visualize_folder",type=str, help="The folder in which we should store the output images")
 
     parser.add_argument('--lr', default=1e-4, type=float)
@@ -143,6 +143,7 @@ def main(args):
         get_coco_api_from_dataset(dataset_val) if args.coco_file_path is not None else None,
         device, num_keypoints=args.num_keypoints,
         visualize_folder=args.visualize_folder,
+        json_file=args.json_file,
     )
 
 

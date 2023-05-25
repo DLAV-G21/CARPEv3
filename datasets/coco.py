@@ -37,15 +37,19 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
         img, target = self.prepare(img, target)
         
+        
+        if self._transforms is not None:
+            img, target = self._transforms[0](img, target)
+
         if self.apply_occlusion_augmentation:
             pass
         if self.al_transforms is not None and self.apply_augm:
             img = np.array(img)
             img = self.al_transforms(image=img)["image"]
-            img = Image.fromarray(np.uint8(img))
-
+            
         if self._transforms is not None:
-            img, target = self._transforms(img, target)
+            img, target = self._transforms[1](img, target)
+
 
         target['image'] = img_copy
         target['filename'] = self.coco.loadImgs(image_id)[0]['file_name']
@@ -141,12 +145,13 @@ def make_coco_transforms(image_set):
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
+    #TODO ADAPTE
     # scales = [480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800]
     scales = [480, 500]
+    val_scale = [scales[-1]]
 
-  
     if image_set == 'train':
-        return T.Compose([
+        return (T.Compose([
             T.RandomHorizontalFlip(),
             T.RandomSelect(
                 T.Compose([
@@ -158,15 +163,12 @@ def make_coco_transforms(image_set):
                     T.RandomResize(scales, max_size=512),
                 ])
             ),
-            normalize,
-        ])
-
+        ]), normalize)
 
     if image_set == 'val'or image_set =="test":
-        return T.Compose([
-            T.RandomResize([480], max_size=1333),
-            normalize,
-        ])
+        return (T.Compose([
+            T.RandomResize([val_scale], max_size=1333),
+        ]), normalize)
 
     raise ValueError(f'unknown {image_set}')
 

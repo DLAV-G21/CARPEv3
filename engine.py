@@ -12,11 +12,12 @@ from datasets.coco_eval import CocoEvaluator
 from tqdm import tqdm
 import itertools
 from util.openpifpaf_helper import *
+import json
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
                     device: torch.device, epoch: int, max_norm: float = 0, logger = None,
-                    postprocessors = None, num_keypoints=24, visualize_folder=None):
+                    postprocessors = None, num_keypoints=24, visualize_folder=None, json_file=None):
     model.train()
     criterion.train()
     len_dl = len(data_loader)
@@ -43,34 +44,11 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
         optimizer.step()
 
-
-        if visualize_folder is not None:
-            results = postprocessors['keypoints'](outputs, targets)
-            if not os.path.exists(visualize_folder):
-                os.makedirs(visualize_folder)
-            for target in targets:
-                filt =[out for out in results if out['image_id'] == target['image_id']]
-                plot_and_save_keypoints_inference(target['image'], f"output_{target['filename']}", filt, visualize_folder, num_keypoints)
-            
-            num_quary = max([t['keypoints'].shape[0] for t in targets]) + 1
-            targets_ = {
-                'keypoints' : torch.cat([
-                   torch.cat((t['keypoints'], -torch.ones((num_quary -t['keypoints'].shape[0],t['keypoints'].shape[1]), device=device)), dim=0).unsqueeze(0)
-                   for t in targets], dim=0),
-                'labels' : torch.cat([
-                    torch.cat([
-                        torch.cat([torch.ones ((           t['keypoints'].shape[0], 1), device=device), torch.zeros((           t['keypoints'].shape[0], 1), device=device)], dim=1),
-                        torch.cat([torch.zeros((num_quary -t['keypoints'].shape[0], 1), device=device), torch.ones ((num_quary -t['keypoints'].shape[0], 1), device=device)], dim=1)
-                    ], dim=0).unsqueeze(0)
-                    for t in targets], dim=0),
-            }
-            results = postprocessors['keypoints'](targets_, targets)
-            for target in targets:
-                filt =[out for out in results if out['image_id'] == target['image_id']]
-                plot_and_save_keypoints_inference(target['image'], f"target_{target['filename']}", filt, visualize_folder, num_keypoints)
+        results_outputs, results_targets = visualize(visualize_folder, targets, num_keypoints, device, postprocessors, outputs)
+        results_outputs, results_targets = json_out(json_file, targets, device, postprocessors, outputs, results_outputs, results_targets)
 
 @torch.no_grad()
-def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epoch=0, logger=None,num_keypoints=24,visualize_folder=None):
+def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epoch=0, logger=None, num_keypoints=24, visualize_folder=None, json_file=None):
     model.eval()
     if criterion is not None:
         criterion.eval()
@@ -81,7 +59,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epo
 
     # From openpifpaf
     if coco_evaluator is not None:
-        CAR_SIGMAS = [0.05] * num_keypoints
+        CAR_SIGMAS = [.5] * num_keypoints
         coco_evaluator.set_scale(np.array(CAR_SIGMAS))
 
     len_dl = len(data_loader)
@@ -101,38 +79,15 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epo
             pbar.set_description(f"Epoch {epoch}, loss = {losses.item():.4f}")
 
             if logger is not None: 
-                logger.add_scalar("Loss/train",losses.item(),len_dl*epoch + i)
+                logger.add_scalar("Loss/train", losses.item(), len_dl*epoch + i)
 
         results = postprocessors['keypoints'](outputs, targets)
 
+        results_outputs, results_targets = visualize(visualize_folder, targets, num_keypoints, device, postprocessors, outputs, results)
+        results_outputs, results_targets = json_out(json_file, targets, device, postprocessors, outputs, results_outputs, results_targets)
+
         if coco_evaluator is not None:
-            coco_evaluator.update_keypoints(results)
-
-        if visualize_folder is not None:
-            if not os.path.exists(visualize_folder):
-                os.makedirs(visualize_folder)
-            for target in targets:
-                filt =[out for out in results if out["image_id"] == target["image_id"]]
-                plot_and_save_keypoints_inference(target["image"], f"output_{target['filename']}", filt, visualize_folder, num_keypoints)
-                
-            if(all('keypoints' in t for t in targets)):
-                num_quary = max([t['keypoints'].shape[0] for t in targets]) + 1
-                targets_ = {
-                    'keypoints' : torch.cat([
-                    torch.cat((t['keypoints'], -torch.ones((num_quary -t['keypoints'].shape[0],t['keypoints'].shape[1]), device=device)), dim=0).unsqueeze(0)
-                    for t in targets], dim=0),
-                    'labels' : torch.cat([
-                        torch.cat([
-                            torch.cat([torch.ones ((           t['keypoints'].shape[0], 1), device=device), torch.zeros((           t['keypoints'].shape[0], 1), device=device)], dim=1),
-                            torch.cat([torch.zeros((num_quary -t['keypoints'].shape[0], 1), device=device), torch.ones ((num_quary -t['keypoints'].shape[0], 1), device=device)], dim=1)
-                        ], dim=0).unsqueeze(0)
-                        for t in targets], dim=0),
-                }
-                results = postprocessors['keypoints'](targets_, targets)
-                for target in targets:
-                    filt =[out for out in results if out['image_id'] == target['image_id']]
-                    plot_and_save_keypoints_inference(target['image'], f"target_{target['filename']}", filt, visualize_folder, num_keypoints)
-
+            coco_evaluator.update_keypoints(results_outputs)
 
     if (coco_evaluator is not None) and (len(coco_evaluator.keypoint_predictions) > 0):
         coco_evaluator.synchronize_between_processes()
@@ -152,9 +107,66 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epo
             logger.add_scalar("val/AR.med", stats[8],epoch)
             logger.add_scalar("val/AR.lar", stats[9],epoch)
         return coco_evaluator
-    else:
-       return None
+    return None
 
+def get_targets_results(targets, postprocessors, device):
+    if(all('keypoints' in t for t in targets)):
+        num_quary = max([t['keypoints'].shape[0] for t in targets]) + 1
+        targets_ = {
+            'keypoints' : torch.cat([
+            torch.cat((t['keypoints'], -torch.ones((num_quary -t['keypoints'].shape[0],t['keypoints'].shape[1]), device=device)), dim=0).unsqueeze(0)
+            for t in targets], dim=0),
+            'labels' : torch.cat([
+                torch.cat([
+                    torch.cat([torch.ones ((           t['keypoints'].shape[0], 1), device=device), torch.zeros((           t['keypoints'].shape[0], 1), device=device)], dim=1),
+                    torch.cat([torch.zeros((num_quary -t['keypoints'].shape[0], 1), device=device), torch.ones ((num_quary -t['keypoints'].shape[0], 1), device=device)], dim=1)
+                ], dim=0).unsqueeze(0)
+                for t in targets], dim=0),
+        }
+
+        return postprocessors['keypoints'](targets_, targets)
+    return None
+
+def visualize(visualize_folder, targets, num_keypoints, device, postprocessors, outputs, results_outputs=None, results_targets=None):
+    if visualize_folder is not None:
+        if not os.path.exists(visualize_folder):
+            os.makedirs(visualize_folder)
+
+        if results_outputs is None:
+            results_outputs = postprocessors['keypoints'](outputs, targets)
+        for target in targets:
+            filt =[out for out in results_outputs if out["image_id"] == target["image_id"]]
+            plot_and_save_keypoints_inference(target["image"], f"output_{target['filename']}", filt, visualize_folder, num_keypoints)
+            
+        if results_targets is None:
+            results_targets = get_targets_results(targets, postprocessors, device)
+        if results_targets is not  None:
+            for target in targets:
+                filt =[out for out in results_targets if out['image_id'] == target['image_id']]
+                plot_and_save_keypoints_inference(target['image'], f"target_{target['filename']}", filt, visualize_folder, num_keypoints)
+
+    return results_outputs, results_targets
+
+def json_out(json_file, targets, device, postprocessors, outputs, results_outputs=None, results_targets=None):
+    if json_file is not None:
+        if results_outputs is None:
+            results_outputs = postprocessors['keypoints'](outputs, targets)
+            
+        json_ = {}
+        for target in targets:
+            filt =[out for out in results_outputs if out["image_id"] == target["image_id"]]
+            json_ = convert_keypoints_inference(json_, target['filename'], target["image_id"], filt, 'output')
+
+        if results_targets is None:
+            results_targets = get_targets_results(targets, postprocessors, device)
+        if results_targets is not  None:
+            for target in targets:
+                filt =[out for out in results_outputs if out["image_id"] == target["image_id"]]
+                json_ = convert_keypoints_inference(json_, target['filename'], target["image_id"], filt, 'target')
+
+        save_json(json_file, json_)
+    return results_outputs, results_targets
+        
 def plot_and_save_keypoints_inference(img, image_name, data, output_folder,num_keypoints):
     img = img.copy()
     skeleton = CAR_SKELETON_24 if num_keypoints ==24 else CAR_SKELETON_66
@@ -203,4 +215,16 @@ def plot_and_save_keypoints_inference(img, image_name, data, output_folder,num_k
       for a in all_found_kps:
         r,g,bc = colors[a%len(colors)]
         cv2.circle(img, all_kps_coordinate[a-1],10, color=[int(bc*255),int(g*255),int(r*255)],thickness=-1)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     cv2.imwrite(os.path.join(output_folder, image_name),img)
+
+def convert_keypoints_inference(json_, image_name, image_id, data, type_):
+    if type_ not in json_:
+      json_[type_] = {'images':[], 'annotations':[]}
+    json_[type_]['images'].append({'file_name':str(image_name), 'id':int(image_id)})
+    json_[type_]['annotations'].extend(data)
+    return json_
+
+def save_json(json_file, json_):
+    with open(json_file, 'w') as f:
+        json.dump(json_, f)
