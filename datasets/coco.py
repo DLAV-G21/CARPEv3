@@ -34,13 +34,14 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         image_id = self.ids[idx]
         img_copy = np.array(img.copy())
         target = { 'image_id': image_id, 'annotations': target }
-        img, target = self.prepare(img, target)
 
         if self.apply_occlusion_augmentation:
             pass
-
         if self.al_transforms is not None and self.apply_augm: 
             img = self.al_transforms(image=img)["image"]
+
+        img, target = self.prepare(img, target)
+        
         if self._transforms is not None:
             img, target = self._transforms(img, target)
 
