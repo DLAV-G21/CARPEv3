@@ -53,10 +53,9 @@ We also made an attept at creating a specific kind of data augmentation applied 
 
 ### Metrics
 To measure the performance of our network, we rely on the Object Keypoint Similarity defined in MS-COCO as 
-<div style="background-color:white">
-![](docs/oks.png)
 
-</div>
+<img src="docs/oks.png" alt="Benchmark" width="600" style="background-color:#2e3136">
+
 ### Experiments
 To test our networks and impact of our data augmentation, we perform several training taking into account different augmentations. We report the performances below using the COCO eval files from the PE-Former repository with values of sigma set to 0.5 for each keypoint.
 
