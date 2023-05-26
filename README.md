@@ -52,6 +52,9 @@ We also made an attept at creating a specific kind of data augmentation applied 
 - We use RCNN to detect all cars in the image and generate a segmentation. At training, with some probability, we blur parts of cars or the background (so taht the network doesn't only learn that in the blurry region, a car is present.
 
 ### Metrics
+To measure the performance of our network, we rely on the Object Keypoint Similarity defined in MS-COCO as 
+
+![](docs/oks.png)
 
 ### Experiments
 To test our networks and impact of our data augmentation, we perform several training taking into account different augmentations. We report the performances below using the COCO eval files from the PE-Former repository with values of sigma set to 0.5 for each keypoint.
@@ -105,18 +108,6 @@ training.py			      		# Script to train our models
 
 ### Installation 
 
-To get the docker image, you can do two different things: 
-- Get it from DockerHub using the command:
-
-```
-docker pull alessioverardo/dlav_g21:latest
-```
-- Create the docker image locally using the following two commands: 
-
-```
-git clone git@github.com:DLAV-G21/ProjectRepository.git
-docker build -t dlav_g21:latest .
-```
 You can also choose to run everything on your cluster and machine. You can install all the requirements using the command 
 ```
 pip install -r requirements.txt
