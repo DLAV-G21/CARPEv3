@@ -42,8 +42,33 @@ At this point, we were thinking of the most effective way to translate our multi
 - 24\*3 values for each keypoint, representing the offset from the center point and whether the point is visible or not
 3. The network is trained with 4 different losses (for which you can find more details in [the original paper]((https://arxiv.org/pdf/2103.12115.pdf))) 
 
-
 Our final repository, which you are currently viewing, is a forked and modified version of the [original repository](https://github.com/pranoyr/End-to-End-Trainable-Multi-Instance-Pose-Estimation-with-Transformers) We tailored it to work with cars and implemented additional enhancements for better visualizations. This approach proved more intuitive and yielded some positive results over the training set.
+
+We would like to gracefully thanks Prof. Alexander Mathis for giving us access to the pretrained weights of their model. We will look at the performance if we fine-tuned a model made for human/animal and transfers its knowledge for car. This will hopefully increase our results even more. 
+
+### Data augmentation
+We also made an attept at creating a specific kind of data augmentation applied to our problem. Specifically, in Autonomous vehicles we have one big challenge which are occlusions. It is often the case that we have some fence, ads or other vehicle blocking the view of vehicle. As an attempt to help the network to learn to handle this case, we augment our data in two different ways:
+- First, we discard random patches in the images of a specific size to simulate an occlusion. 
+- We use RCNN to detect all cars in the image and generate a segmentation. At training, with some probability, we blur parts of cars or the background (so taht the network doesn't only learn that in the blurry region, a car is present.
+
+### Metrics
+
+### Experiments
+To test our networks and impact of our data augmentation, we perform several training taking into account different augmentations. We report the performances below using the COCO eval files from the PE-Former repository with values of sigma set to 0.5 for each keypoint.
+
+We performed the following experiments:
+1. Baseline (only resize and crop)
+2. Classical data augmentation using the albumentations library. 
+3. Occlusion data augmentation as explained above. 
+4. Take the pretrained model from here  and train our model from that.
+
+|              | AP | AP.5 | AP.75 | AP medium | AP large | AR | AR.5 | AR.75 | AR medium | AR large |
+|--------------|----|------|-------|-----------|----------|----|------|-------|-----------|----------|
+| Baseline     |    |      |       |           |          |    |      |       |           |          |
+| Classical DA |    |      |       |           |          |    |      |       |           |          |
+| Occlusion DA |    |      |       |           |          |    |      |       |           |          |
+| Fine-tuning  |    |      |       |           |          |    |      |       |           |          |
+
 
 ### Repository structure
 This is the file and folder structure of the github repository.
