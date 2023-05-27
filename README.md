@@ -120,15 +120,15 @@ ssh -X USERNAME@izar.epfl.ch
 ssh-keygen -t rsa -b 4096
 cat ~/.ssh/.id_pub
 copy the code to  your github account
-git clone git@github.com:DLAV-G21/ProjectRepository.git
-scp path/images.zip USERNAME@izar.epfl.ch:~/ProjectRepository/dlav_data/
-scp path/segm_npy.zip USERNAME@izar.epfl.ch:~/ProjectRepository/dlav_data/ 
+git clone git@github.com:DLAV-G21/CARPEv3.git
+cd CARPEv3
+mkdir dlav_data
+scp path/images.zip USERNAME@izar.epfl.ch:~/CARPEv3/dlav_data/
 unzip ProjectRepository/dlav_data/images.zip
-unzip ProjectRepository/dlav_data/segm_npy.zip
 module load gcc/8.4.0 python/3.7.7 
 python -m venv --system-site-packages venvs/venv-g21
 source venvs/venv-g21/bin/activate
-pip install --no-cache-dir -r ProjectRepository/requirements.txt
+pip install --no-cache-dir -r CARPEv3/requirements.txt
 $sbatch run.sh # submit the job
 ```
 where
