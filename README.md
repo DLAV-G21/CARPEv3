@@ -183,3 +183,12 @@ python inference.py path/to/images path/to/model -j --viz --inference_out_folder
 ```
 If the path to coco annotations is given (the annotation files corresponding to the imagesin `path/to/images`), the performances will be computed and the Average precision at different level will be displayed. `--viz` allows to make the visualizations and save them in `inference_out_folder`. The option `-j` allows to save the output as a json file in the output folder.
 
+### References 
+- <a id="1" href="https://arxiv.org/abs/2005.12872">[1]</a> Carion, N., Massa, F., Synnaeve, G., Usunier, N., Kirillov, A., & Zagoruyko, S. (2020). End-to-End Object Detection with Transformers.[Github](https://github.com/facebookresearch/detr)
+- <a id="2" href="https://arxiv.org/abs/2103.12115">[2]</a> Stoffl, L., Vidal, M., & Mathis, A. (2021). End-to-End Trainable Multi-Instance Pose Estimation with Transformers.[Github](https://github.com/amathislab/poet)
+- <a id="3" href="https://arxiv.org/abs/2112.04981">[3]</a> Panteleris, P., & Argyros, A. (2021). PE-former: Pose Estimation Transformer. [Github](https://github.com/padeler/PE-former)
+- <a id="4" href="https://arxiv.org/abs/2103.02440">[4]</a> Kreiss, S., Bertoni, L., & Alahi, A. (2021). OpenPifPaf: Composite Fields for Semantic Keypoint Detection and Spatio-Temporal Association. [Github](https://github.com/openpifpaf/openpifpaf)
+- <a id="5" href="https://arxiv.org/abs/1809.06839">[5]</a> Buslaev, A., Parinov, A., Khvedchenya, E., Iglovikov, V. I.,
+  & Kalinin, A. A. (2020). Albumentations: fast and flexible image augmentations. Information, 11(2), 125. doi:
+  10.3390/info11020125
+
