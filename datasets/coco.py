@@ -40,38 +40,45 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         target = { 'image_id': image_id, 'annotations': target }
         file_name = self.coco.loadImgs(image_id)[0]['file_name']
 
-        img, target = self.prepare(img, target)
+        img_, target_ = self.prepare(img, target)
 
-        if self._transforms is not None:
-            img, target = self._transforms[0](img, target)
+        while True:
+            img, target = img_.copy(), dict(target_)
 
-        if self.occlusion_augmentation_transforms is not None and self.apply_occlusion_augmentation:
-            img = np.array(img)
-            seg = np.zeros(img.shape[:2])
-            offset = 10
-            for anotation in target['boxes']:
-                a,b,c,d = anotation.numpy()
-                a = max(int(a - offset), 0)
-                b = max(int(b - offset), 0)
-                c = min(int(c + offset), img.shape[1])
-                d = min(int(d + offset), img.shape[0])
-                seg[b:d,a:c] = 1
+            if self._transforms is not None:
+                img, target = self._transforms[0](img, target)
 
-            for mod in self.occlusion_augmentation_transforms:
-                if(random.random() < 0.25):
-                    img = mod(img, seg)
-            img = Image.fromarray(img)
+            if self.occlusion_augmentation_transforms is not None and self.apply_occlusion_augmentation:
+                img = np.array(img)
+                seg = np.zeros(img.shape[:2])
+                offset = 10
+                for anotation in target['boxes']:
+                    a,b,c,d = anotation.numpy()
+                    a = max(int(a - offset), 0)
+                    b = max(int(b - offset), 0)
+                    c = min(int(c + offset), img.shape[1])
+                    d = min(int(d + offset), img.shape[0])
+                    seg[b:d,a:c] = 1
 
-        if self.al_transforms is not None and self.apply_augm:
-            img = np.array(img)
-            img = self.al_transforms(image=img)['image']
+                for mod in self.occlusion_augmentation_transforms:
+                    if(random.random() < 0.25):
+                        img = mod(img, seg)
+                img = Image.fromarray(img)
+
+            if self.al_transforms is not None and self.apply_augm:
+                img = np.array(img)
+                img = self.al_transforms(image=img)['image']
+                
+            if self._transforms is not None:
+                img, target = self._transforms[1](img, target)
+
+            target['image'] = img_copy
+            target['filename'] = file_name
+            target['labels'] -= 1
+
+            if len(target['labels']) > 0:
+                break
             
-        if self._transforms is not None:
-            img, target = self._transforms[1](img, target)
-
-        target['image'] = img_copy
-        target['filename'] = file_name
-        target['labels'] -= 1
         return img, target
 
 
