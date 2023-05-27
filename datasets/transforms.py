@@ -66,9 +66,6 @@ def crop(image, target, region):
         for field in fields:
             target[field] = target[field][keep]
 
-    if "segmentation" in target:
-        target["segmentation"] = F.crop(target["segmentation"], *region)
-
     return cropped_image, target
 
 def hflip(image, target):
@@ -91,9 +88,6 @@ def hflip(image, target):
     if "masks" in target:
         target['masks'] = target['masks'].flip(-1)
 
-    if "segmentation" in target:
-        target["segmentation"] = F.hflip(target["segmentation"])
-
     return flipped_image, target
 
 def rotate(image, target, angle):
@@ -113,9 +107,6 @@ def rotate(image, target, angle):
         keypoints = torch.cat([keypoints, v], dim=1).view(-1,num_keypoints,3)
       
         target["keypoints"] = keypoints
-
-    if "segmentation" in target:
-        target["segmentation"] = F.rotate(target["segmentation"], angle)
 
     return flipped_image, target
 
@@ -179,9 +170,6 @@ def resize(image, target, size, max_size=None):
     if "masks" in target:
         target['masks'] = interpolate(
             target['masks'][:, None].float(), size, mode="nearest")[:, 0] > 0.5
-        
-    if "segmentation" in target:
-        target["segmentation"] = F.resize(target["segmentation"], size)
 
     return rescaled_image, target
 
@@ -195,9 +183,6 @@ def pad(image, target, padding):
     target["size"] = torch.tensor(padded_image.size[::-1])
     if "masks" in target:
         target['masks'] = torch.nn.functional.pad(target['masks'], (0, padding[0], 0, padding[1]))
-    
-    if "segmentation" in target:
-        target["segmentation"] = F.pad(target["segmentation"], (0, 0, padding[0], padding[1]))
 
     return padded_image, target
 

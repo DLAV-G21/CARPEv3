@@ -19,7 +19,6 @@ import random
 from .occlusion_augmentation import apply_grid_masking, apply_blur_masking
 
 import datasets.transforms as T
-import time
 
 
 class CocoDetection(torchvision.datasets.CocoDetection):
@@ -43,25 +42,21 @@ class CocoDetection(torchvision.datasets.CocoDetection):
 
         img, target = self.prepare(img, target)
 
-        if self.occlusion_augmentation_transforms is not None and self.apply_occlusion_augmentation:
-            s = time.time()
-            Image.open(os.path.join(self.root, file_name)).convert("RGB")
-            d = time.time()-s
-            print()
-            print(f'open took {d} seconds')
-
-            s = time.time()
-            target['segmentation'] = Image.fromarray(np.load(os.path.join(self.segmentation_folder, f'{os.path.splitext(file_name)[0]}.npz'))['arr_0'])
-            d = time.time()-s
-            print()
-            print(f'load took {d} seconds')
-
         if self._transforms is not None:
             img, target = self._transforms[0](img, target)
 
         if self.occlusion_augmentation_transforms is not None and self.apply_occlusion_augmentation:
-            seg = np.array(target['segmentation'])
             img = np.array(img)
+            seg = np.zeros(img.shape[:2])
+            offset = 10
+            for anotation in target['boxes']:
+                a,b,c,d = anotation.numpy()
+                a = max(int(a - offset), 0)
+                b = max(int(b - offset), 0)
+                c = min(int(c + offset), img.shape[1])
+                d = min(int(d + offset), img.shape[0])
+                seg[b:d,a:c] = 1
+
             for mod in self.occlusion_augmentation_transforms:
                 if(random.random() < 0.25):
                     img = mod(img, seg)
@@ -114,7 +109,7 @@ class ConvertCocoPolysToMask(object):
 
         anno = target['annotations']
 
-        anno = [obj for obj in anno if 'iscrowd' not in obj or obj['iscrowd'] == 0]
+        anno = [obj for obj in anno if ('iscrowd' not in obj or obj['iscrowd'] == 0) and (obj['num_keypoints']!=0)]
 
         boxes = [obj['bbox'] for obj in anno]
         # guard against no boxes via resizing
@@ -123,27 +118,26 @@ class ConvertCocoPolysToMask(object):
         boxes[:, 0::2].clamp_(min=0, max=w)
         boxes[:, 1::2].clamp_(min=0, max=h)
 
-        classes = [obj['category_id'] for obj in anno if obj['num_keypoints']!=0]
+        classes = [obj['category_id'] for obj in anno]
         classes = torch.tensor(classes, dtype=torch.int64)
 
 
         keypoints = None
         if anno and 'keypoints' in anno[0]:
-            keypoints = [obj['keypoints'] for obj in anno if obj['num_keypoints']!=0]
+            keypoints = [obj['keypoints'] for obj in anno]
             keypoints = torch.as_tensor(keypoints, dtype=torch.float32)
             num_keypoints = keypoints.shape[0]
             if num_keypoints:
                 keypoints = keypoints.view(num_keypoints, -1, 3)
 
-        keep = (boxes[:, 3] > boxes[:, 1]) & (boxes[:, 2] > boxes[:, 0])
-        boxes = boxes[keep]
+        keep = (boxes[:, 3] >= boxes[:, 1]) & (boxes[:, 2] >= boxes[:, 0])
 
         target = {}
-        target['boxes'] = boxes
-        target['labels'] = classes
+        target['boxes'] = boxes[keep]
+        target['labels'] = classes[keep]
         target['image_id'] = image_id
         if keypoints is not None:
-            target['keypoints'] = keypoints
+            target['keypoints'] = keypoints[keep]
 
         # for conversion to coco api
         area = torch.tensor([obj['area'] for obj in anno])
@@ -153,8 +147,6 @@ class ConvertCocoPolysToMask(object):
 
         target['orig_size'] = torch.as_tensor([int(h), int(w)])
         target['size'] = torch.as_tensor([int(h), int(w)])
-
-        del target['boxes']
         
         return image, target
 

@@ -143,12 +143,11 @@ def main(args):
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     log.info(f'Number of trainable parameters {n_parameters}' )
-
-    def is_backbone(name):
-        if args.pretrained_poet is not None:
-            return all([not(n in name) for n in ["class_embed_out","pose_embed","query_embed"]])
-        
-        return "backbone" in name 
+    
+    if args.pretrained_poet is not None:
+        is_backbone = lambda name : all([not(n in name) for n in ["class_embed_out","pose_embed","query_embed"]])
+    else:
+        is_backbone = lambda name : "backbone" in name 
 
     param_dicts = [
         {'params': [p for n, p in model.named_parameters() if not is_backbone(n) and p.requires_grad]},

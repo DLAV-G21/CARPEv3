@@ -11,4 +11,4 @@
 #SBATCH --time 24:00:00
 
 source ../venvs/venv-g21/bin/activate
-python3 train.py baseline_apply_augmentation --batch_size 16 --pretrained_detr --apply_augmentation --apply_occlusion_augmentation
+python3 train.py baseline_apply_occlusion_augmentation --batch_size 16 --pretrained_detr --apply_augmentation --apply_occlusion_augmentation
