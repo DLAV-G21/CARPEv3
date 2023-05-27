@@ -122,9 +122,7 @@ cat ~/.ssh/.id_pub
 copy the code to  your github account
 git clone git@github.com:DLAV-G21/ProjectRepository.git
 scp path/images.zip USERNAME@izar.epfl.ch:~/ProjectRepository/dlav_data/
-scp path/segm_npy.zip USERNAME@izar.epfl.ch:~/ProjectRepository/dlav_data/ 
 unzip ProjectRepository/dlav_data/images.zip
-unzip ProjectRepository/dlav_data/segm_npy.zip
 module load gcc/8.4.0 python/3.7.7 
 python -m venv --system-site-packages venvs/venv-g21
 source venvs/venv-g21/bin/activate
