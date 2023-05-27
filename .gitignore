@@ -8,6 +8,7 @@ carpe_data/*
 runs/*
 out*/*
 out*
+tar_*
 snapshots/*
 
 # C extensions

@@ -24,10 +24,10 @@ sys.out = None
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
-    parser.add_argument("training_name",type=str)
-    parser.add_argument("--pretrained_weight_path",type=str,default="")
-    parser.add_argument("-j", "--json_file",type=str,help="Path to the json output file")
-    parser.add_argument("-v","--visualize_folder",type=str, help="The folder in which we should store the output images")
+    parser.add_argument('training_name',type=str)
+    parser.add_argument('--pretrained_weight_path',type=str)
+    parser.add_argument('-j', '--json_file',type=str,help='Path to the json output file')
+    parser.add_argument('-v','--visualize_folder',type=str, help='The folder in which we should store the output images')
 
     parser.add_argument('--lr', default=1e-4, type=float)
     parser.add_argument('--lr_backbone', default=1e-5, type=float)
@@ -40,60 +40,60 @@ def get_args_parser():
 
     # Model parameters
     parser.add_argument('--frozen_weights', type=str, default=None,
-                        help="Path to the pretrained model. If set, only the mask head will be trained")
+                        help='Path to the pretrained model. If set, only the mask head will be trained')
     # * Backbone
     parser.add_argument('--backbone', default='resnet50', type=str,
-                        help="Name of the convolutional backbone to use")
+                        help='Name of the convolutional backbone to use')
     parser.add_argument('--dilation', action='store_true',
-                        help="If true, we replace stride with dilation in the last convolutional block (DC5)")
+                        help='If true, we replace stride with dilation in the last convolutional block (DC5)')
     parser.add_argument('--position_embedding', default='sine', type=str, choices=('sine', 'learned'),
-                        help="Type of positional embedding to use on top of the image features")
+                        help='Type of positional embedding to use on top of the image features')
 
     # * Transformer
     parser.add_argument('--enc_layers', default=6, type=int,
-                        help="Number of encoding layers in the transformer")
+                        help='Number of encoding layers in the transformer')
     parser.add_argument('--dec_layers', default=6, type=int,
-                        help="Number of decoding layers in the transformer")
+                        help='Number of decoding layers in the transformer')
     parser.add_argument('--dim_feedforward', default=2048, type=int,
-                        help="Intermediate size of the feedforward layers in the transformer blocks")
+                        help='Intermediate size of the feedforward layers in the transformer blocks')
     parser.add_argument('--hidden_dim', default=256, type=int,
-                        help="Size of the embeddings (dimension of the transformer)")
+                        help='Size of the embeddings (dimension of the transformer)')
     parser.add_argument('--dropout', default=0.1, type=float,
-                        help="Dropout applied in the transformer")
+                        help='Dropout applied in the transformer')
     parser.add_argument('--nheads', default=8, type=int,
-                        help="Number of attention heads inside the transformer's attentions")
+                        help='Number of attention heads inside the transformer\'s attentions')
     parser.add_argument('--num_queries', default=50, type=int,
-                        help="Number of query slots")
+                        help='Number of query slots')
     parser.add_argument('--pre_norm', action='store_true')
 
     # * Segmentation
     parser.add_argument('--masks', action='store_true',
-                        help="Train segmentation head if the flag is provided")
+                        help='Train segmentation head if the flag is provided')
 
     # Loss
     parser.add_argument('--no_aux_loss', dest='aux_loss', action='store_false',
-                        help="Disables auxiliary decoding losses (loss at each layer)")
+                        help='Disables auxiliary decoding losses (loss at each layer)')
     # * Matcher
     parser.add_argument('--set_cost_class', default=1, type=float,
-                        help="Class coefficient in the matching cost")
+                        help='Class coefficient in the matching cost')
     parser.add_argument('--set_cost_keypoints', default=1, type=float,
-                        help="L1 keypoints coefficient in the matching cost")
+                        help='L1 keypoints coefficient in the matching cost')
     # * Loss coefficients
     parser.add_argument('--mask_loss_coef', default=1, type=float)
     parser.add_argument('--dice_loss_coef', default=1, type=float)
     parser.add_argument('--bbox_loss_coef', default=5, type=float)
     parser.add_argument('--giou_loss_coef', default=2, type=float)
     parser.add_argument('--eos_coef', default=0.1, type=float,
-                        help="Relative classification weight of the no-object class")
+                        help='Relative classification weight of the no-object class')
 
     # dataset parameters
     parser.add_argument('--dataset_file', default='coco')
     parser.add_argument('--coco_path', type=str, default='carpe_data')
     parser.add_argument('--remove_difficult', action='store_true')
 
-    parser.add_argument('--output_dir', default='snapshots',
+    parser.add_argument('-o', '--output_dir', default='snapshots',
                         help='path where to save, empty for no saving')
-    parser.add_argument('--device', default='cuda',
+    parser.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu',
                         help='device to use for training / testing')
     parser.add_argument('--seed', default=42, type=int)
     parser.add_argument('--resume', default='', help='resume from checkpoint')
@@ -108,25 +108,28 @@ def get_args_parser():
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
 
     # for keypoints
-    parser.add_argument('--num_keypoints', default=24, type=int,
+    parser.add_argument('-k', '--num_keypoints', default=24, type=int,
                         help='number of keypoints')
 
     # for data augmentation
-    parser.add_argument("--apply_augmentation", action="store_true",
-                        help="If we apply the data augmentation")
-    parser.add_argument("--apply_occlusion_augmentation", action="store_true",
-                        help="If we should apply the occlusion augmentation")
+    parser.add_argument('--apply_augmentation', action='store_true',
+                        help='If we apply the data augmentation')
+    parser.add_argument('--apply_occlusion_augmentation', action='store_true',
+                        help='If we should apply the occlusion augmentation')
     
-    parser.add_argument("--eval_n_epochs", default=10, type=int)
+    parser.add_argument('--eval_n_epochs', default=10, type=int)
 
-    parser.add_argument('--pretrained_detr',  help='resume from pretrained detr', action="store_true")
+    parser.add_argument('--pretrained_detr',  help='resume from pretrained detr', action='store_true')
+    parser.add_argument('-t', '--threshold',default=0.5,type=float)
+    parser.add_argument('--threshold_keypoints',default=0.5,type=float)
+    parser.add_argument('--threshold_iou',default=0.5,type=float)
 
     return parser
 
 
 def main(args):
     logging.basicConfig(level=10)
-    log = logging.getLogger("g21")
+    log = logging.getLogger('g21')
 
     device = torch.device(args.device)
 
@@ -141,10 +144,10 @@ def main(args):
     log.info(f'Number of trainable parameters {n_parameters}' )
 
     param_dicts = [
-        {"params": [p for n, p in model.named_parameters() if "backbone" not in n and p.requires_grad]},
+        {'params': [p for n, p in model.named_parameters() if 'backbone' not in n and p.requires_grad]},
         {
-            "params": [p for n, p in model.named_parameters() if "backbone" in n and p.requires_grad],
-            "lr": args.lr_backbone,
+            'params': [p for n, p in model.named_parameters() if 'backbone' in n and p.requires_grad],
+            'lr': args.lr_backbone,
         },
     ]
     optimizer = torch.optim.AdamW(param_dicts, lr=args.lr,
@@ -154,7 +157,7 @@ def main(args):
 
     dataset_train = build_dataset(image_set='train', args=args)
     dataset_val = build_dataset(image_set='val', args=args)
-    dataset_test = build_dataset(image_set="test", args=args)
+    dataset_test = build_dataset(image_set='test', args=args)
         
     sampler_train = torch.utils.data.RandomSampler(dataset_train)
     sampler_val = torch.utils.data.SequentialSampler(dataset_val)
@@ -174,8 +177,8 @@ def main(args):
         output_dir += timestamp
         training_name = args.training_name + timestamp
 
-    writer = SummaryWriter(log_dir=os.path.join("runs",training_name))
-    log.info("The output directory is :"+output_dir)
+    writer = SummaryWriter(log_dir=os.path.join('runs',training_name))
+    log.info('The output directory is :'+output_dir)
     os.makedirs(output_dir)
     output_dir = Path(output_dir)
 
@@ -185,19 +188,19 @@ def main(args):
         pretrained_state = { k:v for k,v in model_ckpt.state_dict().items() if k in model_state and v.size() == model_state[k].size() }
         for k,v in model.state_dict().items():
             if k not in pretrained_state:
-                log.info("The following key "+k+" has not been found in the pretrained dictionary.")
+                log.info('The following key '+k+' has not been found in the pretrained dictionary.')
                 pretrained_state[k] = v
 
         model_state.update(pretrained_state)
         model.load_state_dict(model_state)
 
-    elif os.path.exists(args.pretrained_weight_path):
-        log.info("Loading pretrained weights from "+args.pretrained_weight_path)
-        pretrained_state = torch.load(args.pretrained_weight_path)["model"]
+    elif (args.pretrained_weight_path is not None) and os.path.isfile(args.pretrained_weight_path):
+        log.info('Loading pretrained weights from '+args.pretrained_weight_path)
+        pretrained_state = torch.load(args.pretrained_weight_path)['model']
         model_state = model.state_dict()
         for k,v in model.state_dict().items():
             if k not in pretrained_state:
-                log.info("The following key "+k+" has not been found in the pretrained dictionary.")
+                log.info('The following key '+k+' has not been found in the pretrained dictionary.')
                 pretrained_state[k] = v
 
         model_state.update(pretrained_state)
@@ -215,11 +218,11 @@ def main(args):
         )
         return
 
-    log.info("Start training...")
+    log.info('Start training...')
     best_AP = 0
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
-        log.info(f"Starting training step for epoch {epoch}...")
+        log.info(f'Starting training step for epoch {epoch}...')
         train_one_epoch(
             model, criterion, 
             data_loader_train,
@@ -233,7 +236,7 @@ def main(args):
 
         lr_scheduler.step()
         
-        log.info(f"Saving model at epoch {epoch}...")
+        log.info(f'Saving model at epoch {epoch}...')
         checkpoint_paths = [output_dir / f'checkpoint{epoch:04}.pth']
         for checkpoint_path in checkpoint_paths:
             torch.save({
@@ -252,7 +255,7 @@ def main(args):
 
         if (epoch % args.eval_n_epochs) == 0:
 
-            log.info(f"Starting evaluation step for epoch {epoch}...")
+            log.info(f'Starting evaluation step for epoch {epoch}...')
 
             coco_evaluator = evaluate(
                 model, criterion, postprocessors,
@@ -267,7 +270,7 @@ def main(args):
                 AP = coco_evaluator.coco_eval['keypoints'].stats.tolist()[0]
                 if(AP >= best_AP):
                     best_AP = AP
-                    log.info("Saving best model...")
+                    log.info('Saving best model...')
                     torch.save({
                         'model': model.state_dict(),
                         'optimizer': optimizer.state_dict(),

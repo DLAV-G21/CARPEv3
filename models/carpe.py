@@ -203,9 +203,18 @@ class SetCriterion(nn.Module):
 
 class PostProcess(nn.Module):
 	""" This module converts the model's output into the format expected by the coco api"""
-	def __init__(self, num_keypoints):
+	def __init__(
+			self,
+	        num_keypoints,
+			threshold = 0.8,
+			threshold_keypoints = 0.3,
+			threshold_iou = 0.5,
+			):
 		super().__init__()
 		self.num_keypoints = num_keypoints
+		self.threshold = threshold
+		self.threshold_keypoints = threshold_keypoints
+		self.threshold_iou = threshold_iou
 
 	@torch.no_grad()
 	def forward(self, outputs, targets):
@@ -217,7 +226,6 @@ class PostProcess(nn.Module):
 						  For visualization, this should be the image size after data augment, but before padding
 		"""
 		out_logits, out_keypoints = outputs['labels'], outputs['keypoints']
-		threshold = 0.5
 
 		target_sizes = torch.stack([torch.as_tensor([t["orig_size"][1], t["orig_size"][0]], device=t["orig_size"].device) for t in targets], dim=0)
 
@@ -235,7 +243,7 @@ class PostProcess(nn.Module):
 		A_pred = Z_pred * target_sizes
 
 		positions = C_pred_expand + A_pred
-		positions[V_pred < threshold] = -1
+		positions[V_pred < self.threshold_keypoints] = -1
 
 		image_ids = torch.stack([t["image_id"] for t in targets], dim=0).squeeze(1).cpu().numpy()
 		
@@ -245,24 +253,52 @@ class PostProcess(nn.Module):
 				score, category = s.topk(1)
 				score = score.item()
 				category = category.item() + 1
-				if category == out_logits.shape[-1] or score < threshold:
+				if category == out_logits.shape[-1] or score < self.threshold:
 					continue
 				nbr_keypoints = 0
 				keypoints = [0.] * self.num_keypoints * 3
 
+				x_min = float('inf')
+				x_max = -float('inf')
+				y_min = float('inf')
+				y_max = -float('inf')
 				for i in range(self.num_keypoints):
 					x, y = position[i*2:(i+1)*2]
 					if x >= 0 and y >= 0:
 						nbr_keypoints += 1
 						keypoints[i*3:(i+1)*3] = [x.item(), y.item(), 2]
+
+						x_min = min(x_min, x)
+						x_max = max(x_max, x)
+						y_min = min(y_min, y)
+						y_max = max(y_max, y)
+
 				results.append({
 					'image_id': int(image_id),
 					'category_id': int(category),
 					'score': float(score),
+					'boxes': [x_min, y_min, x_max, y_max],
 					'nbr_keypoints': int(nbr_keypoints),
 					'keypoints': list(keypoints)}
 				)
-		return  results
+		def iou(box1, box2):
+			i = [max(box1[0], box2[0]), max(box1[1], box2[1]), min(box1[2], box2[2]), min(box1[3], box2[3])]
+			i =	(i[0]-i[2])*(i[1]-i[3])
+			u = (box1[0]-box1[2])*(box1[1]-box1[3]) + (box2[0]-box2[2])*(box2[1]-box2[3]) - i
+			return i/u
+		
+		sorted_results = sorted(results, key=lambda x: (x['nbr_keypoints'], x['score']), reverse=True)
+		results = []
+		for sorted_result in sorted_results:
+			keep = True
+			for result in results:
+				if(sorted_result['image_id'] == result['image_id'] and iou(sorted_result['boxes'], result['boxes']) > self.threshold_iou):
+					keep = False
+					break
+			if keep:
+				results.append(sorted_result)
+
+		return results
 
 class MLP(nn.Module):
 	""" Very simple multi-layer perceptron (also called FFN)"""
@@ -312,6 +348,6 @@ def build(args):
 	criterion = SetCriterion(num_classes, matcher=matcher, weight_dict=weight_dict, num_keypoints=args.num_keypoints,
 							 eos_coef=args.eos_coef, losses=losses)
 	criterion.to(device)
-	postprocessors = {'keypoints': PostProcess(args.num_keypoints)}
+	postprocessors = {'keypoints': PostProcess(args.num_keypoints, args.threshold, args.threshold_keypoints, args.threshold_iou)}
 
 	return model, criterion, postprocessors

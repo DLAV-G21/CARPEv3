@@ -25,8 +25,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     pbar.set_description(f"Epoch {epoch}, loss = init")
     for i, (samples, targets) in enumerate(pbar):
         samples = samples.to(device)
-        targets =  [{k: v.to(device) if (v is not None) and (k not in ["image", "filename"]) else v for k, v in t.items()} for t in targets ]
-
+        targets =  [{k: v.to(device) if (v is not None) and (k not in ["image", "filename", "segmentation"]) else v for k, v in t.items()} for t in targets ]
 
         outputs = model(samples)
         loss_dict = criterion(outputs, targets)
@@ -68,7 +67,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epo
     for i, (samples, targets) in enumerate(pbar):
         samples = samples.to(device)
 
-        targets = [{k: v.to(device) if (v is not None) and (k not in ["image", "filename"]) else v for k, v in t.items()} for t in targets ]
+        targets = [{k: v.to(device) if (v is not None) and (k not in ["image", "filename", "segmentation"]) else v for k, v in t.items()} for t in targets ]
 
         outputs = model(samples)
         if criterion is not None:
@@ -210,11 +209,11 @@ def plot_and_save_keypoints_inference(img, image_name, data, output_folder,num_k
       for idx, (a,b) in enumerate(skeleton):
         if (a,b) in set_of_pairs:
           r,g,bc = colors[idx%len(colors)]                  
-          cv2.line(img,all_kps_coordinate[a-1], all_kps_coordinate[b-1],color=[int(bc*255),int(g*255),int(r*255)],thickness=18)
+          cv2.line(img,all_kps_coordinate[a-1], all_kps_coordinate[b-1],color=[int(bc*255),int(g*255),int(r*255)],thickness=10)
 
       for a in all_found_kps:
         r,g,bc = colors[a%len(colors)]
-        cv2.circle(img, all_kps_coordinate[a-1],10, color=[int(bc*255),int(g*255),int(r*255)],thickness=-1)
+        cv2.circle(img, all_kps_coordinate[a-1],5, color=[int(bc*255),int(g*255),int(r*255)],thickness=-1)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     cv2.imwrite(os.path.join(output_folder, image_name),img)
 

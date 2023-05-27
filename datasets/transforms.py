@@ -66,8 +66,10 @@ def crop(image, target, region):
         for field in fields:
             target[field] = target[field][keep]
 
-    return cropped_image, target
+    if "segmentation" in target:
+        target["segmentation"] = F.crop(target["segmentation"], *region)
 
+    return cropped_image, target
 
 def hflip(image, target):
     flipped_image = F.hflip(image)
@@ -89,9 +91,10 @@ def hflip(image, target):
     if "masks" in target:
         target['masks'] = target['masks'].flip(-1)
 
+    if "segmentation" in target:
+        target["segmentation"] = F.hflip(target["segmentation"])
+
     return flipped_image, target
-
-
 
 def rotate(image, target, angle):
     flipped_image = F.rotate(image, angle)
@@ -111,10 +114,10 @@ def rotate(image, target, angle):
       
         target["keypoints"] = keypoints
 
+    if "segmentation" in target:
+        target["segmentation"] = F.rotate(target["segmentation"], angle)
 
     return flipped_image, target
-
-
 
 def resize(image, target, size, max_size=None):
     # size can be min_size (scalar) or (w, h) tuple
@@ -176,9 +179,11 @@ def resize(image, target, size, max_size=None):
     if "masks" in target:
         target['masks'] = interpolate(
             target['masks'][:, None].float(), size, mode="nearest")[:, 0] > 0.5
+        
+    if "segmentation" in target:
+        target["segmentation"] = F.resize(target["segmentation"], size)
 
     return rescaled_image, target
-
 
 def pad(image, target, padding):
     # assumes that we only pad on the bottom right corners
@@ -190,8 +195,11 @@ def pad(image, target, padding):
     target["size"] = torch.tensor(padded_image.size[::-1])
     if "masks" in target:
         target['masks'] = torch.nn.functional.pad(target['masks'], (0, padding[0], 0, padding[1]))
-    return padded_image, target
+    
+    if "segmentation" in target:
+        target["segmentation"] = F.pad(target["segmentation"], (0, 0, padding[0], padding[1]))
 
+    return padded_image, target
 
 class RandomCrop(object):
     def __init__(self, size):
@@ -200,7 +208,6 @@ class RandomCrop(object):
     def __call__(self, img, target):
         region = T.RandomCrop.get_params(img, self.size)
         return crop(img, target, region)
-
 
 class RandomSizeCrop(object):
     def __init__(self, min_size: int, max_size: int):
@@ -232,7 +239,6 @@ class CenterCrop(object):
         crop_left = int(round((image_width - crop_width) / 2.))
         return crop(img, target, (crop_top, crop_left, crop_height, crop_width))
 
-
 class RandomHorizontalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
@@ -241,8 +247,6 @@ class RandomHorizontalFlip(object):
         if random.random() < self.p:
             return hflip(img, target)
         return img, target
-
-
 
 class Rotate(object):
     def __init__(self, p=0.5, limit=[-25,25]):
@@ -254,7 +258,6 @@ class Rotate(object):
             return rotate(img, target, angle)
         return img, target
 
-
 class RandomResize(object):
     def __init__(self, sizes, max_size=None):
         assert isinstance(sizes, (list, tuple))
@@ -265,7 +268,6 @@ class RandomResize(object):
         size = random.choice(self.sizes)
         return resize(img, target, size, self.max_size)
 
-
 class RandomPad(object):
     def __init__(self, max_pad):
         self.max_pad = max_pad
@@ -274,7 +276,6 @@ class RandomPad(object):
         pad_x = random.randint(0, self.max_pad)
         pad_y = random.randint(0, self.max_pad)
         return pad(img, target, (pad_x, pad_y))
-
 
 class RandomSelect(object):
     """
@@ -291,11 +292,9 @@ class RandomSelect(object):
             return self.transforms1(img, target)
         return self.transforms2(img, target)
 
-
 class ToTensor(object):
     def __call__(self, img, target):
         return F.to_tensor(img), target
-
 
 class RandomErasing(object):
 
@@ -304,7 +303,6 @@ class RandomErasing(object):
 
     def __call__(self, img, target):
         return self.eraser(img), target
-
 
 class Normalize(object):
     def __init__(self, mean, std):
@@ -348,7 +346,6 @@ class Normalize(object):
             all_keypoints = torch.cat([C, Z, V], dim=1)
             target["keypoints"] = all_keypoints
         return image, target
-
 
 class Compose(object):
     def __init__(self, transforms):

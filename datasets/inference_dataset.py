@@ -47,12 +47,13 @@ class InferenceDataset(torch.utils.data.Dataset):
 
 
 def transform(size):
+    max_size = 512
     normalize = T.Compose([
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
     return T.Compose([
-        T.Resize(size),
+        T.RandomResize([size], max_size=max_size),
         normalize,
     ])
 
