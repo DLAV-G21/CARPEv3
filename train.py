@@ -117,7 +117,7 @@ def get_args_parser():
     parser.add_argument('--apply_occlusion_augmentation', action='store_true',
                         help='If we should apply the occlusion augmentation')
     
-    parser.add_argument('--eval_n_epochs', default=10, type=int)
+    parser.add_argument('--eval_n_epochs', default=20, type=int)
 
     parser.add_argument('--pretrained_detr',  help='resume from pretrained detr', action='store_true')
     parser.add_argument('-t', '--threshold',default=0.5,type=float)
@@ -287,7 +287,7 @@ def main(args):
                 if os.path.isfile(rm):
                     os.remove(rm)
 
-        if (epoch % args.eval_n_epochs) == 0:
+        if ((epoch + 1) % args.eval_n_epochs) == 0:
 
             log.info(f'Starting evaluation step for epoch {epoch}...')
 
