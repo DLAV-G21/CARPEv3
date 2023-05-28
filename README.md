@@ -65,12 +65,12 @@ We performed the following experiments:
 3. Occlusion data augmentation as explained above. 
 4. Take the pretrained model from here  and train our model from that.
 
-|              | AP | AP.5 | AP.75 | AP medium | AP large | AR | AR.5 | AR.75 | AR medium | AR large | Checkpoint|
-|--------------|----|------|-------|-----------|----------|----|------|-------|-----------|----------|-----------|
-| Baseline     |    |      |       |           |          |    |      |       |           |          |[Download]()|
-| Classical DA |    |      |       |           |          |    |      |       |           |          |[Download]()|
-| Occlusion DA |    |      |       |           |          |    |      |       |           |          |[Download]()|
-| Fine-tuning  |    |      |       |           |          |    |      |       |           |          |[Download]()|
+|              |  AP  | AP.5 | AP.75 | AP medium | AP large | AR | AR.5 | AR.75 | AR medium | AR large | Checkpoint|
+|--------------|------|------|-------|-----------|----------|----|------|-------|-----------|----------|-----------|
+| Baseline     | 0.297 | 0.399 | 0.299 | 0.222 | 0.481 | 0.346 | 0.444 | 0.347 | 0.221 | 0.542 | [Download]() |
+| Classical DA | 0.274 | 0.378 | 0.277 | 0.225 | 0.439 | 0.354 | 0.459 | 0.355 | 0.222 | 0.555 | [Download]() |
+| Occlusion DA |      |      |       |           |          |    |      |       |           |          | [Download]() |
+| Fine-tuning  |      |      |       |           |          |    |      |       |           |          | [Download]() |
 
 ### Repository structure
 This is the file and folder structure of the github repository.

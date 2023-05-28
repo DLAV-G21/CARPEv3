@@ -204,8 +204,9 @@ def main(args):
         if not os.path.isfile(args.pretrained_weight_path):
             raise ValueError("The given pretrained path doesn't exist.")
 
-        log.info('Loading pretrained weights from '+args.pretrained_weight_path)
-        pretrained_state = torch.load(args.pretrained_weight_path)['model']
+        pretrained_state = torch.load(args.pretrained_weight_path)
+        log.info(f'Loading pretrained weights from {args.pretrained_weight_path}, epoch {pretrained_state["epoch"]} ')
+        pretrained_state = pretrained_state['model']
         model_state = model.state_dict()
         for k,v in model.state_dict().items():
             if k not in pretrained_state:
@@ -252,7 +253,6 @@ def main(args):
     best_AP = 0
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
-
         log.info(f'Starting training step for epoch {epoch}...')
         train_one_epoch(
             model, criterion, 
@@ -264,9 +264,6 @@ def main(args):
             visualize_folder=args.visualize_folder,
             json_file=args.json_file,
             )
-
-
-
 
         lr_scheduler.step()
         
