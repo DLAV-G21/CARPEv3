@@ -179,7 +179,7 @@ To run the inference script, you will need to provide at least the following arg
 You can run the following command to use the inference script
 
 ```
-python inference.py path/to/images path/to/model -j --viz --inference_out_folder path/to/folder --coco_path path/to/coco/annotations
+python inference.py path/to/images path/to/model -j path/to/file.json -v path/to/folder --coco_file_path path/to/coco/annotations/file.json
 ```
 If the path to coco annotations is given (the annotation files corresponding to the imagesin `path/to/images`), the performances will be computed and the Average precision at different level will be displayed. `--viz` allows to make the visualizations and save them in `inference_out_folder`. The option `-j` allows to save the output as a json file in the output folder.
 
