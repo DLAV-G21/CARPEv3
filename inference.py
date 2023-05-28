@@ -115,7 +115,7 @@ def main(args):
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     log.info(f'Number of trainable parameters {n_parameters}' )
 
-    dataset_val = CocoDetection(args.image, args.coco_file_path, make_coco_transforms('test'), None, None, None, None, 'test')\
+    dataset_val = CocoDetection(args.image, args.coco_file_path, make_coco_transforms('test'), None, None, None, None, None, 'test')\
          if args.coco_file_path is not None else \
          build_inference(args)
 
