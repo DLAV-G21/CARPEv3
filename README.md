@@ -134,7 +134,7 @@ where
 - `images.zip` is the compression of the images folder from the ApolloCar3D dataset `3d-car-understanding-train/train/images`
 - `segm_npy.zip` is the output of the segmentation from `utils/processing.py` file. It is necessary only for training the networks with occlusion augmentation.  
 ### Dataset
-This project relies on the ApolloCar3D dataset that is available [here](https://github.com/ApolloScapeAuto/dataset-api/blob/master/car_instance/README.md). It contains 5'277 high quality images from 6 videos of the road containing a certain amount of cars. You can find a preliminary data exploration of this dataset in the [exploratory data analysis notebook](DLAV_Data_Exploration.ipynb).
+This project relies on the ApolloCar3D dataset that is available [here](https://github.com/ApolloScapeAuto/dataset-api/blob/master/car_instance/README.md). It contains 5'277 high quality images from 6 videos of the road containing a certain amount of cars. You can find a preliminary data exploration of this dataset in the [exploratory data analysis notebook](data_exploration.ipynb).
 With the data, we then use the [openpifpaf](https://github.com/openpifpaf/openpifpaf) function to convert the semantic keypoints to a version that is similar to Coco. The exact command to generate the file is :
 
 ```
@@ -142,14 +142,16 @@ pip install openpifpaf
 pip install opencv-python
 python3 -m openpifpaf.plugins.apollocar3d.apollo_to_coco --dir_data PATH_TO_DS/3d-car-understanding-train/train --dir_out PATH_TO_DS/3d-car-understanding-train/annotations
 ```
-This will generate keypoints in the Coco format for both training and validation annotations in 24 or 66 keypoints. This is the first conversion we use. We then use a the function [generate_segmentation](util/processing.py) to generate all segmentation (for Data Augmentation). You can find an example of the usage in [this notebook](DLAV_Data_Exploration.ipynb). After the segmentation has been generated, a sequence of functions defined in [DataSplit](DataSplit.ipynb) is used. The split is based on the size of the videos: 
-- Training: videos [180116,180117,171206] for a total of 2571 images
-- Validation:  videos [180114] for a total of 652 images
-- Test: videos [180118,180310] for a total of 1060 images
+This will generate keypoints in the Coco format for both training and validation annotations in 24 or 66 keypoints. A sequence of functions defined in [DataSplit](DataSplit.ipynb) is used. The split is based on the size of the videos: 
+- Training: videos [180116,180117,171206] for a total of 2571 images.
+- Validation:  videos [180114] for a total of 652 images.
+- Test: videos [180118,180310] for a total of 1060 images.
 
 The split has been made on the video name so that we don't cheat and get test video frames close to one in the training set. 
 
 The different datasets object created from the annotation, images and segmentation are [coco](datasets/coco.py) (mostly taken from the []() with minor adjustments to our needs) and the [inference dataset](datasets/inference_dataset.py) which is used to make inference using our model. 
+
+For convenience, we provide a download link for the data and the generated annotations [here](https://drive.google.com/file/d/1Mk1vCvPa_ed-vl4JZjoCav-IDuG4heJ9/view?usp=sharing). Note that the data doesn't belong to us and are the property of the [ApolloCar3D dataset](https://arxiv.org/abs/1811.12222).
 
 ### Train
 You can easily trained your model by giving the following command 
