@@ -17,6 +17,7 @@ from pycocotools import mask as coco_mask
 import os
 import random
 from .occlusion_augmentation import apply_grid_masking, apply_blur_masking
+import copy
 
 import datasets.transforms as T
 
@@ -43,10 +44,13 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         img_, target_ = self.prepare(img, target)
 
         while True:
-            img, target = img_.copy(), dict(target_)
+            img, target = img_.copy(), copy.deepcopy(target_)
 
             if self._transforms is not None:
                 img, target = self._transforms[0](img, target)
+            
+            if len(target['labels']) <= 0:
+                continue
 
             if self.occlusion_augmentation_transforms is not None and self.apply_occlusion_augmentation:
                 img = np.array(img)
@@ -65,10 +69,16 @@ class CocoDetection(torchvision.datasets.CocoDetection):
                         img = mod(img, seg)
                 img = Image.fromarray(img)
 
+            if len(target['labels']) <= 0:
+                continue
+
             if self.al_transforms is not None and self.apply_augm:
                 img = np.array(img)
                 img = self.al_transforms(image=img)['image']
                 
+            if len(target['labels']) <= 0:
+                continue
+            
             if self._transforms is not None:
                 img, target = self._transforms[1](img, target)
 
@@ -77,9 +87,7 @@ class CocoDetection(torchvision.datasets.CocoDetection):
             target['labels'] -= 1
 
             if len(target['labels']) > 0:
-                break
-            
-        return img, target
+                return img, target
 
 
 def convert_coco_poly_to_mask(segmentations, height, width):
