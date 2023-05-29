@@ -81,44 +81,25 @@ The transfer learning objective corresponds to the fact that we will start from 
 This is the file and folder structure of the github repository.
 
 ```
-├── LICENSE
-├── Occlusion_augmentation_demonstration.ipynb
+├── Occlusion_augmentation_demonstration.ipynb				# Demonstration of the occlusion data augmentation in a notebook
 ├── README.md
-├── data_exploration.ipynb
-├── data_split.ipynb
+├── data_exploration.ipynb						# Data exploration notebook for the ApolloCar3D dataset
+├── data_split.ipynb							# Explanation on how to split the dataset for training
 ├── datasets
 │   ├── __init__.py
-│   ├── coco.py
-│   ├── coco_eval.py
-│   ├── inference_dataset.py
-│   ├── occlusion_augmentation.py
-│   └── transforms.py
-├── docs
-│   └── oks.png
-├── engine.py
-├── inference.py
-├── models
-│   ├── __init__.py
-│   ├── backbone.py
-│   ├── carpe.py
-│   ├── detr.py
-│   ├── matcher.py
-│   ├── position_encoding.py
-│   ├── resnet
-│   ├── segmentation.py
-│   └── transformer.py
-├── requirements.txt
-├── run.sh
-├── train.py
-└── util
-    ├── __init__.py
-    ├── box_ops.py
-    ├── eda.py
-    ├── misc.py
-    ├── openpifpaf_helper.py
-    ├── plot_utils.py
-    ├── processing.py
-    └── visualizations.py
+│   ├── coco.py								# Coco dataset adapted from the base repository
+│   ├── coco_eval.py							# Coco eval from PE-former
+│   ├── inference_dataset.py						# Dataset used for inference, load all images in a folder
+│   ├── occlusion_augmentation.py					# Transformation to include occlusion during training
+│   └── transforms.py							# Transformations from the original repository
+├── docs								# Figure for the readme
+├── engine.py								# The most important script allowing to perform train and eval step
+├── inference.py							# Script to use for inference
+├── models								# From the source repository, adapted to our need and matcher speed up
+├── requirements.txt							# The requirements for the Python package
+├── run.sh								# Helper script to run training on the cluster
+├── train.py								# The script to perform training
+└── util								# All the useful scripts for visualizationa nd training.
 ```
 
 ### Installation 
@@ -148,7 +129,6 @@ $sbatch run.sh # submit the job
 ```
 where
 - `images.zip` is the compression of the images folder from the ApolloCar3D dataset `3d-car-understanding-train/train/images`
-- `segm_npy.zip` is the output of the segmentation from `utils/processing.py` file. It is necessary only for training the networks with occlusion augmentation.  
 ### Dataset
 This project relies on the ApolloCar3D dataset that is available [here](https://github.com/ApolloScapeAuto/dataset-api/blob/master/car_instance/README.md). It contains 5'277 high quality images from 6 videos of the road containing a certain amount of cars. You can find a preliminary data exploration of this dataset in the [exploratory data analysis notebook](data_exploration.ipynb).
 With the data, we then use the [openpifpaf](https://github.com/openpifpaf/openpifpaf) function to convert the semantic keypoints to a version that is similar to Coco. The exact command to generate the file is :
