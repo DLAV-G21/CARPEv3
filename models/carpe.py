@@ -287,7 +287,7 @@ class PostProcess(nn.Module):
             u = (box1[0]-box1[2])*(box1[1]-box1[3]) + (box2[0]-box2[2])*(box2[1]-box2[3]) - i
             return i/u
         
-        sorted_results = sorted(results, key=lambda x: (x['nbr_keypoints'], x['score']), reverse=True)
+        sorted_results = sorted(results, key=lambda x: (x['score'], x['nbr_keypoints']), reverse=True)
         results = []
         for sorted_result in sorted_results:
             keep = True

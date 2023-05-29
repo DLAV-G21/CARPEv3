@@ -18,6 +18,7 @@ import os
 from torch.utils.tensorboard import SummaryWriter
 import logging
 from datetime import datetime
+import math
 
 import sys
 sys.out = None
@@ -220,8 +221,8 @@ def main(args):
             raise ValueError("The given pretrained path doesn't exist.")
         log.info('Loading pretrained POET model for training weights from '+args.pretrained_poet)
         pretrained_state = torch.load(args.pretrained_poet)['model']
-        if args.num_queries != 25:
-            del(pretrained_state["query_embed.weight"])
+        query_embed_weight = pretrained_state["query_embed.weight"].clone()
+        del(pretrained_state["query_embed.weight"])
 
         model_state = model.state_dict()
         pretrained_state = {k:v for k,v in pretrained_state.items() if k in model_state}
@@ -231,10 +232,14 @@ def main(args):
                 if "batches_tracked" not in k:
                     log.info('The following key '+k+' has not been found in the pretrained dictionary.')
                 pretrained_state[k] = v
-
-
+                
         model_state.update(pretrained_state)
         model.load_state_dict(model_state)
+
+        for i in range(math.ceil(args.num_queries/25)):
+            min_ = i*25
+            max_ = min((i+1)*25, args.num_queries)
+            model.query_embed.weight.data[min_:max_] = query_embed_weight.clone()[:max_-min_]
 
     model.to(device)
 
