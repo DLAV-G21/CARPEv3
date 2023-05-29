@@ -84,7 +84,6 @@ This is the file and folder structure of the github repository.
 ├── LICENSE
 ├── Occlusion_augmentation_demonstration.ipynb
 ├── README.md
-├── Untitled.ipynb
 ├── data_exploration.ipynb
 ├── data_split.ipynb
 ├── datasets
