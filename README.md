@@ -1,4 +1,4 @@
-## Deep Learning for Autonomous Vehicle : Group 12
+## Deep Learning for Autonomous Vehicle : Group 21 - Robin Plumey and Alessio Verardo
 
 In this repository, you'll find all the code to run our project: 2D semantic keypoints detection. 
 
