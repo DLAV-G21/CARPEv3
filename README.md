@@ -72,6 +72,11 @@ We performed the following experiments:
 | Occlusion DA |      |      |       |           |          |    |      |       |           |          | [Download]() |
 | Fine-tuning  |      |      |       |           |          |    |      |       |           |          | [Download]() |
 
+Note that it is likely that our training weren't completely over (the loss was still decreasing little by little). But due to the fact that we found a working solution late in the semester and that the training already take a full day, we preferred to choose a . 
+This may explan why the performance of the classical data augmentation are a bit under the one of the baseline. As the network sees new images everytime and more different one, it may take more time to converge to its best solution. Note that all our training starts with the DETR baseline and we just change the number of queries and the heads to match our problem.
+
+The transfer learning objective corresponds to the fact that we will start from the solution of the paper [POET](https://github.com/amathislab/poet) that was trained to detect person in images, change the number of queries and the head to comply with our problems and use the pretrained transformer encoder-decoder. The idea is to see if we can reach a better average precision than training from DETR which is trained for a different (object detection instead of keypoint detection). The pretrained weight of POET can be found [here](https://github.com/amathislab/poet) and the pretrained weights of DETR are directly usable in the code if you launch the train script with the parameter `--pretrained_detr`.
+
 ### Repository structure
 This is the file and folder structure of the github repository.
 
