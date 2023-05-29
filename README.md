@@ -81,33 +81,45 @@ The transfer learning objective corresponds to the fact that we will start from 
 This is the file and folder structure of the github repository.
 
 ```
-model	      					# Folder containing all our models
-    ├── losses 					# Folder with the different losses used throughout the training
-    ├── hrformer				# clone of the HRFormer repository containing the different parts of the HRFormer model
-    ├── model_saves				# the different weights of the different trained_models
-    ├── decoder.py				# Python decoder to match links and keypoints and create skeleton for the different car in the images
-    ├── head.py					# The transformer deocder 
-    ├── neck.py					# model between the transformer encoder and decoder
-    ├── net.py					# model putting everything together and our final model.
-utils  
-    ├── coco_evaluator.py		# A file to convert our dataset to the COCO format. Mix between the one from OpenPifPaf and PE-Former repositories
-    ├── eda.py					# helper method to perform the data exploration
-    ├── openpifpaf_helper.py 	# constants copies directly from the openpifpaf project repository so that don't need to install the openpifpaf dependcy which is long to install on colab
-    ├── processing.py			# helper file containing the mask segmentation as well as the train-val-test split of the dataset.
-    └── visualizations.py 		# helper file to generate visualizations for both keypoint and exploratory data analysis.         
-DLAV_Data_Exploration			# Jupyter notebook containing a small exploration of the dataset.
-Dockerfile 						# File to create the docker image used in the projected
-README.md
-builder.py 						# convenience script to get optimizer and scheduler from config
-dataset.py						# file containing the different dataset used throughout the projects
-dlav_config.json				# Script containing all the config values for to run the project
-inference.py					# Script to make predictions using our network.
-requirements.txt				# All the dependecy library
-run.sh							# Convenience sript to run training on Scitas.
-setup.sh						# Setup file in the dockerfile
-train.py						# script to train the network according to the config
-trainer.py 						# python file containing the Trainer class used for training.
-training.py			      		# Script to train our models
+├── LICENSE
+├── Occlusion_augmentation_demonstration.ipynb
+├── README.md
+├── Untitled.ipynb
+├── data_exploration.ipynb
+├── data_split.ipynb
+├── datasets
+│   ├── __init__.py
+│   ├── coco.py
+│   ├── coco_eval.py
+│   ├── inference_dataset.py
+│   ├── occlusion_augmentation.py
+│   └── transforms.py
+├── docs
+│   └── oks.png
+├── engine.py
+├── inference.py
+├── models
+│   ├── __init__.py
+│   ├── backbone.py
+│   ├── carpe.py
+│   ├── detr.py
+│   ├── matcher.py
+│   ├── position_encoding.py
+│   ├── resnet
+│   ├── segmentation.py
+│   └── transformer.py
+├── requirements.txt
+├── run.sh
+├── train.py
+└── util
+    ├── __init__.py
+    ├── box_ops.py
+    ├── eda.py
+    ├── misc.py
+    ├── openpifpaf_helper.py
+    ├── plot_utils.py
+    ├── processing.py
+    └── visualizations.py
 ```
 
 ### Installation 
