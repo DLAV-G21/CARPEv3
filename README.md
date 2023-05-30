@@ -76,24 +76,22 @@ We performed the following experiments:
 | Transfer learning  | 0.008 | 0.026 | 0.002 | 0.000 | 0.014 | 0.016 | 0.043 | 0.008 | 0.000 | 0.034 | [Download](https://drive.google.com/file/d/1bKuea70D4AbTjylznEb6TkC3uMXuqCO3/view?usp=sharing) |
 
 <div style="width:100%">
-<div style="width:40%; text-align:center;display:inline-block;">
-<p>Baseline</p>
-<img src="docs/baseline.png" width="35%">
-</div>
-<p>Baseline with data augmentation</p>
-<div style="width:40%; text-align:center;display:inline-block;">
-<img src="docs/baseline_apply_augmentation.png" width="35%">
-</div>
-</div>
-<div style="width:100%">
-<div style="width:40%; text-align:center;display:inline-block;">
-<p>Occlusion augmentation</p>
-<img src="docs/occlusion_augmentation.png" width="35%">
-</div>
-<div style="width:40%; text-align:center;display:inline-block;">
-<p>POET Transfer learning</p>
-<img src="docs/poet.png" width="35%">
-</div>
+    <div style="width:40%; text-align:center;display:inline-block;">
+        <p>Baseline</p>
+        <img src="docs/baseline.png" width="35%">
+    </div>
+    <div style="width:40%; text-align:center;display:inline-block;">
+        <p>Baseline with data augmentation</p>
+        <img src="docs/baseline_apply_augmentation.png" width="35%">
+    </div>
+    <div style="width:40%; text-align:center;display:inline-block;">
+        <p>Occlusion augmentation</p>
+        <img src="docs/occlusion_augmentation.png" width="35%">
+    </div>
+    <div style="width:40%; text-align:center;display:inline-block;">
+        <p>POET Transfer learning</p>
+        <img src="docs/poet.png" width="35%">
+    </div>
 </div>
 
 The results for each method are really close to each other. However, we can see that from the plot of the losses that the training wasn't over and it is likely that we will get better results. This is due to the fact that we have one day of training maximum for all our models (which is already a lot) and we prefer to spend more time exploring the options rather than letting the model train for 3 days before getting te results. 
