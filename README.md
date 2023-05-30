@@ -71,10 +71,12 @@ We performed the following experiments:
 
 <div style="width:100%">
 <img src="docs/baseline.png" width="35%">
-<img src="docs/baseline.png" width="35%">
+<img src="docs/baseline_apply_augmentation.png" width="35%">
 </div>
-<img src="docs/baseline.png" width="50%">
-<img src="docs/baseline.png" width="50%">
+<div style="width:100%">
+<img src="docs/occlusion_augmentation.png" width="35%">
+<img src="docs/occlusion_augmentation.png" width="35%">
+</div>
 
 Note that it is likely that our training weren't completely over (the loss was still decreasing little by little). But due to the fact that we found a working solution late in the semester and that the training already take a full day, we preferred to choose a . 
 This may explan why the performance of the classical data augmentation are a bit under the one of the baseline. As the network sees new images everytime and more different one, it may take more time to converge to its best solution. Note that all our training starts with the DETR baseline and we just change the number of queries and the heads to match our problem.
