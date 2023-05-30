@@ -69,8 +69,10 @@ We performed the following experiments:
 | Occlusion DA | 0.282 | 0.396 | 0.281 | 0.238 | 0.443 | 0.353 | 0.464 | 0.353 | 0.237 | 0.539 | [Download]() |
 | Fine-tuning  |      |      |       |           |          |    |      |       |           |          | [Download]() |
 
+<div style="width:100%">
 <img src="docs/baseline.png" width="50%">
 <img src="docs/baseline.png" width="50%">
+</div>
 <img src="docs/baseline.png" width="50%">
 <img src="docs/baseline.png" width="50%">
 
