@@ -76,21 +76,21 @@ We performed the following experiments:
 | Transfer learning  | 0.008 | 0.026 | 0.002 | 0.000 | 0.014 | 0.016 | 0.043 | 0.008 | 0.000 | 0.034 | [Download](https://drive.google.com/file/d/1bKuea70D4AbTjylznEb6TkC3uMXuqCO3/view?usp=sharing) |
 
 <div style="width:100%">
-    <div style="width:40%; text-align:center;display:inline-block;">
+    <div style="width:45%; text-align:center;display:inline-block;">
         <p>Baseline</p>
-        <img src="docs/baseline.png" width="35%">
+        <img src="docs/baseline.png" width="45%">
     </div>
-    <div style="width:40%; text-align:center;display:inline-block;">
+    <div style="width:45%; text-align:center;display:inline-block;">
         <p>Baseline with data augmentation</p>
-        <img src="docs/baseline_apply_augmentation.png" width="35%">
+        <img src="docs/baseline_apply_augmentation.png" width="45%">
     </div>
-    <div style="width:40%; text-align:center;display:inline-block;">
+    <div style="width:45%; text-align:center;display:inline-block;">
         <p>Occlusion augmentation</p>
-        <img src="docs/occlusion_augmentation.png" width="35%">
+        <img src="docs/occlusion_augmentation.png" width="45%">
     </div>
-    <div style="width:40%; text-align:center;display:inline-block;">
+    <div style="width:45%; text-align:center;display:inline-block;">
         <p>POET Transfer learning</p>
-        <img src="docs/poet.png" width="35%">
+        <img src="docs/poet.png" width="45%">
     </div>
 </div>
 
