@@ -70,8 +70,8 @@ We performed the following experiments:
 | Fine-tuning  |      |      |       |           |          |    |      |       |           |          | [Download]() |
 
 <div style="width:100%">
-<img src="docs/baseline.png" width="50%">
-<img src="docs/baseline.png" width="50%">
+<img src="docs/baseline.png" width="35%">
+<img src="docs/baseline.png" width="35%">
 </div>
 <img src="docs/baseline.png" width="50%">
 <img src="docs/baseline.png" width="50%">
