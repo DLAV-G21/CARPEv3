@@ -105,7 +105,7 @@ The transfer learning objective corresponds to the fact that we will start from 
 In the image below, we illustrate the output of our model on an image from the test set. On the left, you have the output of our models and on the right the target annotations. 
 
 
-We can see that a decent amount of cars are detected. The majority of them have their keypoints correctly placed.
+We can see that a decent amount of cars are detected. The majority of them have their keypoints correctly placed. However, zooming in the images, we can see that there are still imperfections, e.g. keypoints that are not perfectly placed, missed cars especially on the corner of the images. But note that not all the cars have been labelled in the dataset. Therefore, it also makes sense to 
 
 ### Conclusion
 We are happy to have our final results given all the attempts we made to solve this project. It was rewawrding in the end to think about this project in all the angle and to have something working in the end. Sadly, we lack a bit of time to be able to push all experiment to convergence and to really compare all the values. As a future line of work, one could try to improve the generalization ability of the network by adding a perspective warp data augmentation. That is, we can try to design a transformation that will simulate a different angle of the camera. One could also try to improve the post-processing because there are still small artifacts in some images (douly detected keyponts for instance). 
