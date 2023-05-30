@@ -70,8 +70,8 @@ We performed the following experiments:
 
 |              |  AP  | AP.5 | AP.75 | AP medium | AP large | AR | AR.5 | AR.75 | AR medium | AR large | Checkpoint|
 |--------------|------|------|-------|-----------|----------|----|------|-------|-----------|----------|-----------|
-| Baseline     |  | [Download](https://drive.google.com/file/d/1EWJx5Jw5Cwo879ecXWJ1K6lw10PUiGZr/view?usp=sharing) |
-| Classical DA |  | [Download](https://drive.google.com/file/d/144ZS8V1medbw3Ki0AgCc3cfXzyKOx1xl/view?usp=sharing) |
+| Baseline     | 0.059 | 0.140 | 0.041 | 0.010 | 0.120 | 0.087 | 0.175 | 0.078 | 0.004 | 0.183 | [Download](https://drive.google.com/file/d/1EWJx5Jw5Cwo879ecXWJ1K6lw10PUiGZr/view?usp=sharing) |
+| Classical DA | 0.035 | 0.087 | 0.021 | 0.009 | 0.069 | 0.071 | 0.149 | 0.062 | 0.003 | 0.150 | [Download](https://drive.google.com/file/d/144ZS8V1medbw3Ki0AgCc3cfXzyKOx1xl/view?usp=sharing) |
 | Occlusion DA | 0.039 | 0.100 | 0.023 | 0.011 | 0.079 | 0.070 | 0.148 | 0.060 | 0.003 | 0.148 | [Download](https://drive.google.com/file/d/10a3Sia-e76zTY_o00RCtQSjawyrIE_q2/view?usp=sharing) |
 | Transfer learning  | 0.008 | 0.026 | 0.002 | 0.000 | 0.014 | 0.016 | 0.043 | 0.008 | 0.000 | 0.034 | [Download](https://drive.google.com/file/d/1bKuea70D4AbTjylznEb6TkC3uMXuqCO3/view?usp=sharing) |
 
