@@ -80,9 +80,10 @@ We performed the following experiments:
 <img src="docs/baseline_apply_augmentation.png" width="35%">
 </div>
 <div style="width:100%">
-<div style="width:35%; text-align:center;">
-<img src="docs/occlusion_augmentation.png">
+<div style="width:50%; text-align:center;">
+<img src="docs/occlusion_augmentation.png" width="35%">
 	<p>Occlusion augmentation</p>
+	</div>
 <img src="docs/poet.png" width="35%">
 </div>
 
