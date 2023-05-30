@@ -71,8 +71,8 @@ We performed the following experiments:
 |              |  AP  | AP.5 | AP.75 | AP medium | AP large | AR | AR.5 | AR.75 | AR medium | AR large | Checkpoint|
 |--------------|------|------|-------|-----------|----------|----|------|-------|-----------|----------|-----------|
 | Baseline     | 0.297 | 0.399 | 0.299 | 0.222 | 0.481 | 0.346 | 0.444 | 0.347 | 0.221 | 0.542 | [Download](https://drive.google.com/file/d/1EWJx5Jw5Cwo879ecXWJ1K6lw10PUiGZr/view?usp=sharing) |
-| Classical DA | 0.274 | 0.378 | 0.277 | 0.225 | 0.439 | 0.354 | 0.459 | 0.355 | 0.222 | 0.555 | [Download]() |
-| Occlusion DA | 0.282 | 0.396 | 0.281 | 0.238 | 0.443 | 0.353 | 0.464 | 0.353 | 0.237 | 0.539 | [Download]() |
+| Classical DA | 0.274 | 0.378 | 0.277 | 0.225 | 0.439 | 0.354 | 0.459 | 0.355 | 0.222 | 0.555 | [Download](https://drive.google.com/file/d/144ZS8V1medbw3Ki0AgCc3cfXzyKOx1xl/view?usp=sharing) |
+| Occlusion DA | 0.282 | 0.396 | 0.281 | 0.238 | 0.443 | 0.353 | 0.464 | 0.353 | 0.237 | 0.539 | [Download](https://drive.google.com/file/d/10a3Sia-e76zTY_o00RCtQSjawyrIE_q2/view?usp=sharing) |
 | Fine-tuning  |      |      |       |           |          |    |      |       |           |          | [Download]() |
 
 <div style="width:100%">
