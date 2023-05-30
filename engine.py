@@ -58,7 +58,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epo
 
     # From openpifpaf
     if coco_evaluator is not None:
-        CAR_SIGMAS = [.5] * num_keypoints
+        CAR_SIGMAS = [.05] * num_keypoints
         coco_evaluator.set_scale(np.array(CAR_SIGMAS))
 
     len_dl = len(data_loader)
@@ -225,29 +225,29 @@ def convert_keypoints_inference(json_, image_name, image_id, data, type_):
     return json_
 
 def save_json(json_file, json_):
+    if json_file is not None:
+        output = []
+        ann = json_['output']['annotations']
+        print(len(ann))
+        predictions = []
+        last_frame = 1
+        for a in ann:
+            frame = a['image_id']+1
+            if frame != last_frame:
+                output.append({'frame': last_frame, 'predictions': predictions})
+                predictions = []
+                last_frame = frame
+            predictions.append({
+                'score': a['score'],
+                'nbr_keypoints': a['nbr_keypoints'],
+                'keypoints': a['keypoints'],
+            })
+        output.append({'frame': frame, 'predictions': predictions})
 
-    output = []
-    ann = json_['output']['annotations']
-    print(len(ann))
-    predictions = []
-    last_frame = 1
-    for a in ann:
-        frame = a['image_id']+1
-        if frame != last_frame:
-            output.append({'frame': last_frame, 'predictions': predictions})
-            predictions = []
-            last_frame = frame
-        predictions.append({
-            'score': a['score'],
-            'nbr_keypoints': a['nbr_keypoints'],
-            'keypoints': a['keypoints'],
-        })
-    output.append({'frame': frame, 'predictions': predictions})
+        json_ = {
+            "project" :  "CARPE (car pose estimation)",
+            "output": output,
+        }
 
-    json_ = {
-        "project" :  "CARPE (car pose estimation)",
-        "output": output,
-    }
-
-    with open(json_file, 'w') as f:
-        json.dump(json_, f)
+        with open(json_file, 'w') as f:
+            json.dump(json_, f)

@@ -70,10 +70,10 @@ We performed the following experiments:
 
 |              |  AP  | AP.5 | AP.75 | AP medium | AP large | AR | AR.5 | AR.75 | AR medium | AR large | Checkpoint|
 |--------------|------|------|-------|-----------|----------|----|------|-------|-----------|----------|-----------|
-| Baseline     | 0.297 | 0.399 | 0.299 | 0.222 | 0.481 | 0.346 | 0.444 | 0.347 | 0.221 | 0.542 | [Download](https://drive.google.com/file/d/1EWJx5Jw5Cwo879ecXWJ1K6lw10PUiGZr/view?usp=sharing) |
-| Classical DA | 0.274 | 0.378 | 0.277 | 0.225 | 0.439 | 0.354 | 0.459 | 0.355 | 0.222 | 0.555 | [Download](https://drive.google.com/file/d/144ZS8V1medbw3Ki0AgCc3cfXzyKOx1xl/view?usp=sharing) |
-| Occlusion DA | 0.282 | 0.396 | 0.281 | 0.238 | 0.443 | 0.353 | 0.464 | 0.353 | 0.237 | 0.539 | [Download](https://drive.google.com/file/d/10a3Sia-e76zTY_o00RCtQSjawyrIE_q2/view?usp=sharing) |
-| Fine-tuning  |      |      |       |           |          |    |      |       |           |          | [Download]() |
+| Baseline     |  | [Download](https://drive.google.com/file/d/1EWJx5Jw5Cwo879ecXWJ1K6lw10PUiGZr/view?usp=sharing) |
+| Classical DA |  | [Download](https://drive.google.com/file/d/144ZS8V1medbw3Ki0AgCc3cfXzyKOx1xl/view?usp=sharing) |
+| Occlusion DA | 0.039 | 0.100 | 0.023 | 0.011 | 0.079 | 0.070 | 0.148 | 0.060 | 0.003 | 0.148 | [Download](https://drive.google.com/file/d/10a3Sia-e76zTY_o00RCtQSjawyrIE_q2/view?usp=sharing) |
+| Fine-tuning  | 0.008 | 0.026 | 0.002 | 0.000 | 0.014 | 0.016 | 0.043 | 0.008 | 0.000 | 0.034 | [Download]() |
 
 <div style="width:100%">
 <img src="docs/baseline.png" width="35%">
@@ -81,7 +81,7 @@ We performed the following experiments:
 </div>
 <div style="width:100%">
 <img src="docs/occlusion_augmentation.png" width="35%">
-<img src="docs/occlusion_augmentation.png" width="35%">
+<img src="docs/poet.png" width="35%">
 </div>
 
 The results for each method are really close to each other. However, we can see that from the plot of the losses that the training wasn't over and it is likely that we will get better results. This is due to the fact that we have one day of training maximum for all our models (which is already a lot) and we prefer to spend more time exploring the options rather than letting the model train for 3 days before getting te results. 
