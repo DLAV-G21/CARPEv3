@@ -52,7 +52,7 @@ We also made an attept at creating a specific kind of data augmentation applied 
 2. Use the bounding box annotation, we can create a segmentation map where pixels are 1 if they belong to a car and 0 otherwise. Then, uniformly at random, we use either the segmentation map (i.e the cars) or the inverse of it (the background). We then sample coordinates in the feature maps and create blurry circle around the chosen location. 
 
 Here is an illustration of data augmentation applied during the training 
-<img src="docs/dataw_augmentation.png" width="75%">
+<img src="docs/data_augmentation.png" width="75%">
 
 ### Metrics
 To measure the performance of our network, we rely on the Object Keypoint Similarity defined in MS-COCO as 
