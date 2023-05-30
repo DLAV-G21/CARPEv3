@@ -86,6 +86,8 @@ The transfer learning objective corresponds to the fact that we will start from 
 
 Overall, all number are really close to each other and satisfactory. We will illustrate now illustrates the results with some outputs of the models in our predefined test set. 
 
+### Conclusion
+We are happy to have our final results given all the attempts we made to solve this project. It was rewawrding in the end to think about this project in all the angle and to have something working in the end. Sadly, we lack a bit of time to be able to push all experiment to convergence and to really compare all the values. As a future line of work, one could try to improve the generalization ability of the network by adding a perspective warp data augmentation. That is, we can try to design a transformation that will simulate a different angle of the camera. One could also try to improve the post-processing because there are still small artifacts in some images (douly detected keyponts for instance). 
 
 ### Repository structure
 This is the file and folder structure of the github repository.
