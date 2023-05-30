@@ -39,6 +39,9 @@ At this point, we were thinking of the most effective way to translate our multi
 - 24\*3 values for each keypoint, representing the offset from the center point and whether the point is visible or not
 3. The network is trained with 4 different losses (for which you can find more details in [the original paper]((https://arxiv.org/pdf/2103.12115.pdf))) 
 
+Here is an illustration of the architecture and the training objective
+<img src="docs/architecture.png" width="75%">
+
 Our final repository, which you are currently viewing, is a forked and modified version of the [original repository](https://github.com/pranoyr/End-to-End-Trainable-Multi-Instance-Pose-Estimation-with-Transformers) We tailored it to work with cars and implemented additional enhancements for better visualizations. This approach proved more intuitive and yielded some positive results over the training set.
 
 We would like to gracefully thanks Prof. Alexander Mathis for giving us access to the pretrained weights of their model. We will look at the performance if we fine-tuned a model made for human/animal and transfers its knowledge for car. This will hopefully increase our results even more. 
@@ -47,6 +50,9 @@ We would like to gracefully thanks Prof. Alexander Mathis for giving us access t
 We also made an attept at creating a specific kind of data augmentation applied to our problem. Specifically, in Autonomous vehicles we have one big challenge which are occlusions. It is often the case that we have some fence, ads or other vehicle blocking the view of vehicle. As an attempt to help the network to learn to handle this case, we augment our data in two different ways (the data augmentation is illustrated in the [occlusion augmentation notebook](Occlusion_augmentation_demonstration.ipynb)). We do two main contributions for the data augmentation: 
 1. We sample uniform at random in the image square of pixels and we set the value for those pixels to be gray. It is important the areas are chosen at random, otherwise the network could learn to focus only on those area (if only put them on car for instance). 
 2. Use the bounding box annotation, we can create a segmentation map where pixels are 1 if they belong to a car and 0 otherwise. Then, uniformly at random, we use either the segmentation map (i.e the cars) or the inverse of it (the background). We then sample coordinates in the feature maps and create blurry circle around the chosen location. 
+
+Here is an illustration of data augmentation applied during the training 
+<img src="docs/dataw_augmentation.png" width="75%">
 
 ### Metrics
 To measure the performance of our network, we rely on the Object Keypoint Similarity defined in MS-COCO as 
