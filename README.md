@@ -77,22 +77,26 @@ We performed the following experiments:
 
 <div style="width:100%">
 <div style="width:40%; text-align:center;display:inline-block;">
+<p>Baseline</p>
 <img src="docs/baseline.png" width="35%">
-	<p>Baseline</p>
+	
 	</div>
+	<p>Baseline with data augmentation</p>
 	<div style="width:40%; text-align:center;display:inline-block;">
 	<img src="docs/baseline_apply_augmentation.png" width="35%">
-	<p>Baseline with data augmentation</p>
+	
 	</div>
 </div>
 <div style="width:100%">
 <div style="width:40%; text-align:center;display:inline-block;">
-<img src="docs/occlusion_augmentation.png" width="35%">
 	<p>Occlusion augmentation</p>
+<img src="docs/occlusion_augmentation.png" width="35%">
+	
 	</div>
 	<div style="width:40%; text-align:center;display:inline-block;">
+		<p>POET Transfer learning</p>
 	<img src="docs/poet.png" width="35%">
-	<p>POET Transfer learning</p>
+	
 	</div>
 
 </div>
