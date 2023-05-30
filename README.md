@@ -76,21 +76,21 @@ We performed the following experiments:
 | Transfer learning  | 0.008 | 0.026 | 0.002 | 0.000 | 0.014 | 0.016 | 0.043 | 0.008 | 0.000 | 0.034 | [Download]() |
 
 <div style="width:100%">
-<div style="width:50%; text-align:center;">
+<div style="width:40%; text-align:center;">
 <img src="docs/baseline.png" width="35%">
 	<p>Baseline</p>
 	</div>
-	<div style="width:50%; text-align:center;">
+	<div style="width:40%; text-align:center;">
 	<img src="docs/baseline_apply_augmentation.png" width="35%">
 	<p>Baseline with data augmentation</p>
 	</div>
 </div>
 <div style="width:100%">
-<div style="width:50%; text-align:center;">
+<div style="width:40%; text-align:center;">
 <img src="docs/occlusion_augmentation.png" width="35%">
 	<p>Occlusion augmentation</p>
 	</div>
-	<div style="width:50%; text-align:center;">
+	<div style="width:40%; text-align:center;">
 	<img src="docs/poet.png" width="35%">
 	<p>POET Transfer learning</p>
 	</div>
