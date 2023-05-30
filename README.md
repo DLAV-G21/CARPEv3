@@ -76,15 +76,25 @@ We performed the following experiments:
 | Transfer learning  | 0.008 | 0.026 | 0.002 | 0.000 | 0.014 | 0.016 | 0.043 | 0.008 | 0.000 | 0.034 | [Download]() |
 
 <div style="width:100%">
+<div style="width:50%; text-align:center;">
 <img src="docs/baseline.png" width="35%">
-<img src="docs/baseline_apply_augmentation.png" width="35%">
+	<p>Baseline</p>
+	</div>
+	<div style="width:50%; text-align:center;">
+	<img src="docs/baseline_apply_augmentation.png" width="35%">
+	<p>Baseline with data augmentation</p>
+	</div>
 </div>
 <div style="width:100%">
 <div style="width:50%; text-align:center;">
 <img src="docs/occlusion_augmentation.png" width="35%">
 	<p>Occlusion augmentation</p>
 	</div>
-<img src="docs/poet.png" width="35%">
+	<div style="width:50%; text-align:center;">
+	<img src="docs/poet.png" width="35%">
+	<p>POET Transfer learning</p>
+	</div>
+
 </div>
 
 The results for each method are really close to each other. However, we can see that from the plot of the losses that the training wasn't over and it is likely that we will get better results. This is due to the fact that we have one day of training maximum for all our models (which is already a lot) and we prefer to spend more time exploring the options rather than letting the model train for 3 days before getting te results. 
