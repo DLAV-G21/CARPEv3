@@ -69,10 +69,23 @@ We performed the following experiments:
 | Occlusion DA | 0.282 | 0.396 | 0.281 | 0.238 | 0.443 | 0.353 | 0.464 | 0.353 | 0.237 | 0.539 | [Download]() |
 | Fine-tuning  |      |      |       |           |          |    |      |       |           |          | [Download]() |
 
-Note that it is likely that our training weren't completely over (the loss was still decreasing little by little). But due to the fact that we found a working solution late in the semester and that the training already take a full day, we preferred to choose a . 
-This may explan why the performance of the classical data augmentation are a bit under the one of the baseline. As the network sees new images everytime and more different one, it may take more time to converge to its best solution. Note that all our training starts with the DETR baseline and we just change the number of queries and the heads to match our problem.
+<div style="width:100%">
+<img src="docs/baseline.png" width="35%">
+<img src="docs/baseline_apply_augmentation.png" width="35%">
+</div>
+<div style="width:100%">
+<img src="docs/occlusion_augmentation.png" width="35%">
+<img src="docs/occlusion_augmentation.png" width="35%">
+</div>
+
+The results for each method are really close to each other. However, we can see that from the plot of the losses that the training wasn't over and it is likely that we will get better results. This is due to the fact that we have one day of training maximum for all our models (which is already a lot) and we prefer to spend more time exploring the options rather than letting the model train for 3 days before getting te results. 
+
+Also, intuitively, the data augmentation modifies each image and therefore it will take longer to converge as different images are seen at each epoch (compared to the baseline). Note that we also have a small steps around step 30k (which corresponds to the epoch 200 approximately) where we divide the learnign rate by 10. Therefore, as a future work it could be nice to see what are the exact implications of using specific LR-scheduler and train for a longer period. 
 
 The transfer learning objective corresponds to the fact that we will start from the solution of the paper [POET](https://github.com/amathislab/poet) that was trained to detect person in images, change the number of queries and the head to comply with our problems and use the pretrained transformer encoder-decoder. The idea is to see if we can reach a better average precision than training from DETR which is trained for a different (object detection instead of keypoint detection). The pretrained weight of POET can be found [here](https://github.com/amathislab/poet) and the pretrained weights of DETR are directly usable in the code if you launch the train script with the parameter `--pretrained_detr`.
+
+Overall, all number are really close to each other and satisfactory. We will illustrate now illustrates the results with some outputs of the models in our predefined test set. 
+
 
 ### Repository structure
 This is the file and folder structure of the github repository.
