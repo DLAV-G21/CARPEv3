@@ -73,7 +73,7 @@ We performed the following experiments:
 | Baseline     |  | [Download](https://drive.google.com/file/d/1EWJx5Jw5Cwo879ecXWJ1K6lw10PUiGZr/view?usp=sharing) |
 | Classical DA |  | [Download](https://drive.google.com/file/d/144ZS8V1medbw3Ki0AgCc3cfXzyKOx1xl/view?usp=sharing) |
 | Occlusion DA | 0.039 | 0.100 | 0.023 | 0.011 | 0.079 | 0.070 | 0.148 | 0.060 | 0.003 | 0.148 | [Download](https://drive.google.com/file/d/10a3Sia-e76zTY_o00RCtQSjawyrIE_q2/view?usp=sharing) |
-| Transfer learning  | 0.008 | 0.026 | 0.002 | 0.000 | 0.014 | 0.016 | 0.043 | 0.008 | 0.000 | 0.034 | [Download]() |
+| Transfer learning  | 0.008 | 0.026 | 0.002 | 0.000 | 0.014 | 0.016 | 0.043 | 0.008 | 0.000 | 0.034 | [Download](https://drive.google.com/file/d/1bKuea70D4AbTjylznEb6TkC3uMXuqCO3/view?usp=sharing) |
 
 <div style="width:100%">
 <div style="width:40%; text-align:center;display:inline-block;">
