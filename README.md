@@ -69,6 +69,11 @@ We performed the following experiments:
 | Occlusion DA | 0.282 | 0.396 | 0.281 | 0.238 | 0.443 | 0.353 | 0.464 | 0.353 | 0.237 | 0.539 | [Download]() |
 | Fine-tuning  |      |      |       |           |          |    |      |       |           |          | [Download]() |
 
+<img src="docs/baseline.png" width="50%">
+<img src="docs/baseline.png" width="50%">
+<img src="docs/baseline.png" width="50%">
+<img src="docs/baseline.png" width="50%">
+
 Note that it is likely that our training weren't completely over (the loss was still decreasing little by little). But due to the fact that we found a working solution late in the semester and that the training already take a full day, we preferred to choose a . 
 This may explan why the performance of the classical data augmentation are a bit under the one of the baseline. As the network sees new images everytime and more different one, it may take more time to converge to its best solution. Note that all our training starts with the DETR baseline and we just change the number of queries and the heads to match our problem.
 
