@@ -20,8 +20,8 @@ from models import build_model
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
-    parser.add_argument('pretrained_weight_path',type=str)
     parser.add_argument('image',type=str)
+    parser.add_argument('pretrained_weight_path',type=str)
     parser.add_argument('--coco_file_path', type=str)
     parser.add_argument('-j', '--json_file',type=str,help='Path to the json output file')
     parser.add_argument('-v','--visualize_folder',type=str, help='The folder in which we should store the output images')

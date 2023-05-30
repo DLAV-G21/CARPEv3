@@ -64,6 +64,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epo
     len_dl = len(data_loader)
     pbar = tqdm(data_loader)
     pbar.set_description(f"Epoch {epoch}, loss = init")
+    json_ = {}
     for i, (samples, targets) in enumerate(pbar):
         samples = samples.to(device)
 
@@ -83,10 +84,12 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, epo
         results = postprocessors['keypoints'](outputs, targets)
 
         results_outputs, results_targets = visualize(visualize_folder, targets, num_keypoints, device, postprocessors, outputs, results)
-        results_outputs, results_targets = json_out(json_file, targets, device, postprocessors, outputs, results_outputs, results_targets)
+        results_outputs, results_targets, json_ = json_out(json_file, targets, device, postprocessors, outputs, json_, results_outputs, results_targets)
 
         if coco_evaluator is not None:
             coco_evaluator.update_keypoints(results_outputs)
+    
+    save_json(json_file, json_)
 
     if (coco_evaluator is not None) and (len(coco_evaluator.keypoint_predictions) > 0):
         coco_evaluator.synchronize_between_processes()
@@ -146,12 +149,11 @@ def visualize(visualize_folder, targets, num_keypoints, device, postprocessors, 
 
     return results_outputs, results_targets
 
-def json_out(json_file, targets, device, postprocessors, outputs, results_outputs=None, results_targets=None):
+def json_out(json_file, targets, device, postprocessors, outputs, json_, results_outputs=None, results_targets=None):
     if json_file is not None:
         if results_outputs is None:
             results_outputs = postprocessors['keypoints'](outputs, targets)
             
-        json_ = {}
         for target in targets:
             filt =[out for out in results_outputs if out["image_id"] == target["image_id"]]
             json_ = convert_keypoints_inference(json_, target['filename'], target["image_id"], filt, 'output')
@@ -162,9 +164,7 @@ def json_out(json_file, targets, device, postprocessors, outputs, results_output
             for target in targets:
                 filt =[out for out in results_outputs if out["image_id"] == target["image_id"]]
                 json_ = convert_keypoints_inference(json_, target['filename'], target["image_id"], filt, 'target')
-
-        save_json(json_file, json_)
-    return results_outputs, results_targets
+    return results_outputs, results_targets, json_
         
 def plot_and_save_keypoints_inference(img, image_name, data, output_folder,num_keypoints):
     img = img.copy()
@@ -225,5 +225,29 @@ def convert_keypoints_inference(json_, image_name, image_id, data, type_):
     return json_
 
 def save_json(json_file, json_):
+
+    output = []
+    ann = json_['output']['annotations']
+    print(len(ann))
+    predictions = []
+    last_frame = 1
+    for a in ann:
+        frame = a['image_id']+1
+        if frame != last_frame:
+            output.append({'frame': last_frame, 'predictions': predictions})
+            predictions = []
+            last_frame = frame
+        predictions.append({
+            'score': a['score'],
+            'nbr_keypoints': a['nbr_keypoints'],
+            'keypoints': a['keypoints'],
+        })
+    output.append({'frame': frame, 'predictions': predictions})
+
+    json_ = {
+        "project" :  "CARPE (car pose estimation)",
+        "output": output,
+    }
+
     with open(json_file, 'w') as f:
         json.dump(json_, f)
