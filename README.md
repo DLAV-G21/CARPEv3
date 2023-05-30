@@ -103,11 +103,14 @@ Also, intuitively, the data augmentation modifies each image and therefore it wi
 The transfer learning objective corresponds to the fact that we will start from the solution of the paper [POET](https://github.com/amathislab/poet) that was trained to detect person in images, change the number of queries and the head to comply with our problems and use the pretrained transformer encoder-decoder. The idea is to see if we can reach a better average precision than training from DETR which is trained for a different (object detection instead of keypoint detection). The pretrained weight of POET can be found [here](https://github.com/amathislab/poet) and the pretrained weights of DETR are directly usable in the code if you launch the train script with the parameter `--pretrained_detr`. Due to time constraints, we trained the whole network together, the queries and the weights had a higher learning rate than the transformer encoder-decoder. However, we can see in the loss that it took even more time to converge (and the loss is still higher than the other as you can see in the bottom right figure). Maybe a future idea for training would be to first freeze the CNN, Transformer encoder and decoder layer and then after the queries and the head had time to calibrate a bit (after let's say 30 epochs9, let the whole network train together. This may give better results.
 
 In the image below, we illustrate the output of our model on an image from the test set. On the left, you have the output of our models and on the right the target annotations. 
+
 <img src="docs/ex_out.png" width="75%">
 
 We can see that a decent amount of cars are detected. The majority of them have their keypoints correctly placed. 
+
 <img src="docs/ex1.png" width="75%">
 <img src="docs/ex2.png" width="75%">
+
 However, zooming in the images, we can see that there are still imperfections, e.g. keypoints that are not perfectly placed, missed cars especially on the corner of the images, overlapping keypoints,etc... Training for a longer period might solve this issue. Spending some times on a more sophisticate post-processing can also be useful in order to remove duplicate keypoints. However, we should also note that the training data are not perfect and they also some misses some keypoints, especially for cars at the edges of the images or in the back. Without complete training data, it is hard to for the network to learn everything. Sometimes, we also have seen some cases in which the network output cars that are not in the annotations and therefore will be penalized for that, unfortunately.
 
 ### Conclusion
