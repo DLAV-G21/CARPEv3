@@ -60,7 +60,7 @@ To measure the performance of our network, we rely on the Object Keypoint Simila
 <img src="docs/oks.png" alt="Benchmark" width="600" style="background-color:#2e3136">
 
 ### Experiments
-To test our networks and impact of our data augmentation, we perform several training taking into account different augmentations. We report the performances below using the COCO eval files from the PE-Former repository with values of sigma set to 0.5 for each keypoint.
+To test our networks and impact of our data augmentation, we perform several training taking into account different augmentations. We report the performances below using the COCO eval files from the PE-Former repository with values of sigma set to 0.05 for each keypoint. Note that our dataset have images of 3384x2710 which are really high resolution images and therefore, we are a small shift in the position of the keypoints is more penalized than a small shift in a lower resolution image. 
 
 We performed the following experiments:
 1. Baseline (only resize and crop)
@@ -73,7 +73,7 @@ We performed the following experiments:
 | Baseline     |  | [Download](https://drive.google.com/file/d/1EWJx5Jw5Cwo879ecXWJ1K6lw10PUiGZr/view?usp=sharing) |
 | Classical DA |  | [Download](https://drive.google.com/file/d/144ZS8V1medbw3Ki0AgCc3cfXzyKOx1xl/view?usp=sharing) |
 | Occlusion DA | 0.039 | 0.100 | 0.023 | 0.011 | 0.079 | 0.070 | 0.148 | 0.060 | 0.003 | 0.148 | [Download](https://drive.google.com/file/d/10a3Sia-e76zTY_o00RCtQSjawyrIE_q2/view?usp=sharing) |
-| Fine-tuning  | 0.008 | 0.026 | 0.002 | 0.000 | 0.014 | 0.016 | 0.043 | 0.008 | 0.000 | 0.034 | [Download]() |
+| Transfer learning  | 0.008 | 0.026 | 0.002 | 0.000 | 0.014 | 0.016 | 0.043 | 0.008 | 0.000 | 0.034 | [Download]() |
 
 <div style="width:100%">
 <img src="docs/baseline.png" width="35%">
@@ -88,9 +88,9 @@ The results for each method are really close to each other. However, we can see 
 
 Also, intuitively, the data augmentation modifies each image and therefore it will take longer to converge as different images are seen at each epoch (compared to the baseline). Note that we also have a small steps around step 30k (which corresponds to the epoch 200 approximately) where we divide the learnign rate by 10. Therefore, as a future work it could be nice to see what are the exact implications of using specific LR-scheduler and train for a longer period. 
 
-The transfer learning objective corresponds to the fact that we will start from the solution of the paper [POET](https://github.com/amathislab/poet) that was trained to detect person in images, change the number of queries and the head to comply with our problems and use the pretrained transformer encoder-decoder. The idea is to see if we can reach a better average precision than training from DETR which is trained for a different (object detection instead of keypoint detection). The pretrained weight of POET can be found [here](https://github.com/amathislab/poet) and the pretrained weights of DETR are directly usable in the code if you launch the train script with the parameter `--pretrained_detr`.
+The transfer learning objective corresponds to the fact that we will start from the solution of the paper [POET](https://github.com/amathislab/poet) that was trained to detect person in images, change the number of queries and the head to comply with our problems and use the pretrained transformer encoder-decoder. The idea is to see if we can reach a better average precision than training from DETR which is trained for a different (object detection instead of keypoint detection). The pretrained weight of POET can be found [here](https://github.com/amathislab/poet) and the pretrained weights of DETR are directly usable in the code if you launch the train script with the parameter `--pretrained_detr`. Due to time constraints, we trained the whole network together, the queries and the weights had a higher learning rate than the transformer encoder-decoder. However, we cansee in the loss that it took even more time to converge (and the loss is still higher than the other). Maybe a future idea for training would be to first freeze the CNN, Transformer encoder and decoder layer and then after the 
+queries and the head had time to calibrate a bit (after let's say 30 epochs9, let the whole network train together. This may give better results.
 
-Overall, all number are really close to each other and satisfactory. We will illustrate now illustrates the results with some outputs of the models in our predefined test set. 
 
 ### Conclusion
 We are happy to have our final results given all the attempts we made to solve this project. It was rewawrding in the end to think about this project in all the angle and to have something working in the end. Sadly, we lack a bit of time to be able to push all experiment to convergence and to really compare all the values. As a future line of work, one could try to improve the generalization ability of the network by adding a perspective warp data augmentation. That is, we can try to design a transformation that will simulate a different angle of the camera. One could also try to improve the post-processing because there are still small artifacts in some images (douly detected keyponts for instance). 
