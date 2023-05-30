@@ -66,7 +66,7 @@ We performed the following experiments:
 |--------------|------|------|-------|-----------|----------|----|------|-------|-----------|----------|-----------|
 | Baseline     | 0.297 | 0.399 | 0.299 | 0.222 | 0.481 | 0.346 | 0.444 | 0.347 | 0.221 | 0.542 | [Download]() |
 | Classical DA | 0.274 | 0.378 | 0.277 | 0.225 | 0.439 | 0.354 | 0.459 | 0.355 | 0.222 | 0.555 | [Download]() |
-| Occlusion DA |      |      |       |           |          |    |      |       |           |          | [Download]() |
+| Occlusion DA | 0.282 | 0.396 | 0.281 | 0.238 | 0.443 | 0.353 | 0.464 | 0.353 | 0.237 | 0.539 | [Download]() |
 | Fine-tuning  |      |      |       |           |          |    |      |       |           |          | [Download]() |
 
 Note that it is likely that our training weren't completely over (the loss was still decreasing little by little). But due to the fact that we found a working solution late in the semester and that the training already take a full day, we preferred to choose a . 
